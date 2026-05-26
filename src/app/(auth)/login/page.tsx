@@ -19,7 +19,7 @@ export default function LoginPage() {
           </p>
           
           <div className="mt-12 bg-white/20 p-6 rounded-2xl backdrop-blur-md border border-white/30 text-left">
-            <h3 className="text-lg font-bold mb-2"> Bạn biết không?</h3>
+            <h3 className="text-lg font-bold mb-2">Bạn biết không?</h3>
             <p className="text-sm opacity-90">
               Việc sử dụng nền tảng trực tuyến giúp học viên tăng hiệu quả tiếp thu kiến thức lên đến 40% nhờ vào hệ thống theo dõi tiến độ tự động.
             </p>
