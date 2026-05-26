@@ -67,7 +67,7 @@ export function LoginForm() {
             <input
               {...register("email")}
               type="email"
-              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
+              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
                 errors.email ? "border-red-500 focus:ring-red-200" : "border-gray-200"
               }`}
               placeholder="nhap@email.com"
@@ -95,7 +95,7 @@ export function LoginForm() {
             <input
               {...register("password")}
               type="password"
-              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
+              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
                 errors.password ? "border-red-500 focus:ring-red-200" : "border-gray-200"
               }`}
               placeholder="••••••••"
