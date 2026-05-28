@@ -28,6 +28,9 @@ export default function AdminLayout({
             <a href="/admin/lecturers" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
               Giảng viên
             </a>
+            <a href="/admin/quizzes" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
+              Bài thi / Quizzes
+            </a>
             <a href="/admin/notifications" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
               Thông báo
             </a>
