@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 
 // Dữ liệu mẫu cho Thông báo (Mock data)
@@ -57,6 +60,8 @@ const typeBadgeClass = (type: string) => {
 };
 
 export default function AdminNotificationsPage() {
+  const [selectedNotif, setSelectedNotif] = useState<any>(null);
+
   const unreadCount = NOTIFICATIONS_DATA.filter((n) => n.status === "Chưa đọc").length;
 
   return (
@@ -163,7 +168,10 @@ export default function AdminNotificationsPage() {
                      Đánh dấu đọc
                    </button>
                  )}
-                 <button className="flex-1 sm:flex-none whitespace-nowrap rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">
+                 <button 
+                  onClick={() => setSelectedNotif(notif)}
+                  className="flex-1 sm:flex-none whitespace-nowrap rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+                 >
                    Xem chi tiết
                  </button>
               </div>
@@ -171,6 +179,58 @@ export default function AdminNotificationsPage() {
           ))}
         </div>
       </section>
+
+      {/* Modal Hiện chi tiết thông báo */}
+      {selectedNotif && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl lg:p-8">
+            <button 
+              onClick={() => setSelectedNotif(null)}
+              className="absolute right-6 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </button>
+            
+            <div className="mb-4 flex items-center gap-3">
+              <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${typeBadgeClass(selectedNotif.type)}`}>
+                {selectedNotif.type}
+              </span>
+              <span className="text-sm text-slate-500">{selectedNotif.date}</span>
+            </div>
+            
+            <h2 className="text-xl font-bold text-slate-900 mb-4">{selectedNotif.title}</h2>
+            
+            <div className="rounded-2xl bg-slate-50 p-5 text-sm leading-relaxed text-slate-700 border border-slate-100">
+              <p>{selectedNotif.message}</p>
+              
+              {/* Thêm một tí dữ liệu giả vờ cho dài ra để xem chi tiết chân thực hơn */}
+              <p className="mt-4">
+                Lưu ý: Mọi thắc mắc hoặc báo lỗi liên quan đến thông báo này xin vui lòng liên hệ phòng Hành chính - Đào tạo hoặc gửi email đến bộ phận Hỗ trợ IT nội bộ.
+              </p>
+              <p className="mt-4 font-semibold">Cảm ơn và trân trọng!</p>
+            </div>
+            
+            <div className="mt-6 flex justify-end gap-3">
+              {selectedNotif.status === "Chưa đọc" && (
+                <button 
+                  onClick={() => setSelectedNotif(null)}
+                  className="rounded-xl bg-[#87CEFA] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6ec5f2]"
+                >
+                  Xác nhận đã đọc
+                </button>
+              )}
+              <button 
+                onClick={() => setSelectedNotif(null)}
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
