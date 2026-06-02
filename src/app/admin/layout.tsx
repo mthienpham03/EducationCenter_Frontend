@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 export default function AdminLayout({
@@ -16,15 +17,15 @@ export default function AdminLayout({
           </div>
 
           <nav className="space-y-2 text-sm text-slate-700">
-            <a href="/admin/accounts" className="block rounded-2xl px-4 py-3 text-slate-900 transition hover:bg-[#d6f1ff]">
+            <Link href="/admin/users" className="block rounded-2xl px-4 py-3 text-slate-900 transition hover:bg-[#d6f1ff]">
               Quản lý tài khoản
-            </a>
-            <a href="/admin/courses" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
+            </Link>
+            <Link href="/admin/courses" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
               Khóa học
-            </a>
-            <a href="/admin/students" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
+            </Link>
+            <Link href="/admin/students" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
               Học viên
-            </a>
+            </Link>
             <a href="/admin/lecturers" className="block rounded-2xl px-4 py-3 text-slate-700 transition hover:bg-[#d6f1ff]">
               Giảng viên
             </a>
