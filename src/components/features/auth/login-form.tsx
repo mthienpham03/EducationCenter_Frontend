@@ -6,6 +6,9 @@ import * as z from "zod";
 import Link from "next/link";
 import { Mail, Lock, LogIn, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { authApi } from "@/lib/api/auth.api";
+import { useAuthStore } from "@/store/auth.store";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email không hợp lệ" }),
@@ -24,17 +27,23 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
+  const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
+
   const onSubmit = async (data: LoginFormValues) => {
     setErrorMsg("");
     try {
-      console.log("Dữ liệu đăng nhập:", data);
-      // Mô phỏng gọi API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // TODO: Thay bằng API call thực tế
-      // const response = await loginApi(data);
-      // alert("Đăng nhập thành công!");
-    } catch (error) {
-      setErrorMsg("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      const response = await authApi.login(data);
+      if (response.success) {
+        setAuth(response.data.user, response.data.accessToken);
+        router.push("/");
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        setErrorMsg(error.response.data.message);
+      } else {
+        setErrorMsg("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      }
     }
   };
 
