@@ -36,7 +36,16 @@ export function LoginForm() {
       const response = await authApi.login(data);
       if (response.success) {
         setAuth(response.data.user, response.data.accessToken);
-        router.push("/");
+        const role = response.data.user.role?.toLowerCase();
+        if (role === "lecturer") {
+          router.push("/lecturer/courses"); // redirecting to courses as default since we built it
+        } else if (role === "student") {
+          router.push("/student/dashboard");
+        } else if (role === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (error: any) {
       if (error.response?.data?.message) {
