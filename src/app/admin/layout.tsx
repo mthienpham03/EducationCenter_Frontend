@@ -10,6 +10,7 @@ const navItems = [
   { label: "Content Management", href: "/admin/documents" },
   { label: "Assessment", href: "/admin/quizzes" },
   { label: "Scheduling", href: "/admin/schedules" },
+  { label: "Notifications", href: "/admin/notifications" },
 ];
 
 export default function AdminLayout({ children }: PropsWithChildren) {
