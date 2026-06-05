@@ -8,27 +8,31 @@ interface UserProfile {
   email: string;
   fullName: string;
   phone: string | null;
-  role: "student";
+  role: "admin" | "lecturer" | "student";
   status: "active" | "inactive" | "locked" | "pending";
   createdAt: string;
   lastLoginAt: string | null;
   lockedUntil: string | null;
   lockReason: string | null;
+  lecturerProfile?: {
+    specialization?: string | null;
+    experienceYears?: number | null;
+  } | null;
   studentProfile?: {
     studentCode?: string | null;
-    dateOfBirth?: string | null;
     address?: string | null;
   } | null;
 }
 
-export default function StudentManagement() {
-  const [students, setStudents] = useState<UserProfile[]>([]);
+export default function UserManagement() {
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Pagination (5 items per page)
@@ -40,13 +44,16 @@ export default function StudentManagement() {
   const [isLockOpen, setIsLockOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
-  // Form states for Create Student
+  // Form states for Create User
+  const [createRole, setCreateRole] = useState<"lecturer" | "student">("student");
   const [createEmail, setCreateEmail] = useState("");
   const [createFullName, setCreateFullName] = useState("");
   const [createPhone, setCreatePhone] = useState("");
   const [studentCode, setStudentCode] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [address, setAddress] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [experienceYears, setExperienceYears] = useState("");
 
   // Form states for Lock User
   const [lockReason, setLockReason] = useState("");
@@ -55,37 +62,39 @@ export default function StudentManagement() {
   const [customLockDate, setCustomLockDate] = useState("");
 
   useEffect(() => {
-    fetchStudents();
+    fetchUsers();
   }, []);
 
-  const fetchStudents = async () => {
+  const fetchUsers = async () => {
     try {
       setLoading(true);
       setErrorMsg("");
-      const response = await axiosClient.get("/users/students");
+      const response = await axiosClient.get("/users");
       if (response.data && response.data.success) {
-        setStudents(response.data.data || []);
+        setUsers(response.data.data || []);
       } else {
-        setErrorMsg("Không thể lấy danh sách học viên.");
+        setErrorMsg("Không thể lấy danh sách người dùng.");
       }
     } catch (err: any) {
-      console.error("Fetch students error:", err);
-      setErrorMsg(err.response?.data?.message || "Có lỗi xảy ra khi tải dữ liệu học viên.");
+      console.error("Fetch users error:", err);
+      setErrorMsg(err.response?.data?.message || "Có lỗi xảy ra khi tải dữ liệu.");
     } finally {
       setLoading(false);
     }
   };
 
   // Filter logic
-  const filteredStudents = students.filter((u) => {
+  const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (u.phone && u.phone.includes(searchQuery)) ||
-      (u.studentProfile?.studentCode &&
-        u.studentProfile.studentCode.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (u.studentProfile?.address &&
-        u.studentProfile.address.toLowerCase().includes(searchQuery.toLowerCase()));
+      (u.phone && u.phone.includes(searchQuery));
+
+    const matchesRole =
+      roleFilter === "all" ||
+      (roleFilter === "admin" && u.role === "admin") ||
+      (roleFilter === "lecturer" && u.role === "lecturer") ||
+      (roleFilter === "student" && u.role === "student");
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -94,18 +103,18 @@ export default function StudentManagement() {
       (statusFilter === "pending" && u.status === "pending") ||
       (statusFilter === "inactive" && u.status === "inactive");
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // Statistics
-  const totalStudents = students.length;
-  const activeCount = students.filter((u) => u.status === "active").length;
-  const lockedCount = students.filter((u) => u.status === "locked").length;
-  const pendingCount = students.filter((u) => u.status === "pending").length;
+  // Dynamic statistics
+  const totalUsers = users.length;
+  const activeCount = users.filter((u) => u.status === "active").length;
+  const lockedCount = users.filter((u) => u.status === "locked").length;
+  const pendingCount = users.filter((u) => u.status === "pending").length;
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE) || 1;
-  const paginatedStudents = filteredStudents.slice(
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+  const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     (currentPage - 1) * ITEMS_PER_PAGE + ITEMS_PER_PAGE
   );
@@ -122,28 +131,44 @@ export default function StudentManagement() {
     setCurrentPage(1);
   };
 
+  const handleRoleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRoleFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
     setCurrentPage(1);
   };
 
-  // Handle Create Student Submit
-  const handleCreateStudent = async (e: React.FormEvent) => {
+  // Handle Create User Submit
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const response = await axiosClient.post("/users/students", {
-        email: createEmail,
-        fullName: createFullName,
-        phone: createPhone || undefined,
-        studentCode,
-        dateOfBirth: dateOfBirth || undefined,
-        address: address || undefined,
-      });
+      let response;
+      if (createRole === "student") {
+        response = await axiosClient.post("/users/students", {
+          email: createEmail,
+          fullName: createFullName,
+          phone: createPhone || undefined,
+          studentCode,
+          dateOfBirth: dateOfBirth || undefined,
+          address: address || undefined,
+        });
+      } else {
+        response = await axiosClient.post("/users/lecturers", {
+          email: createEmail,
+          fullName: createFullName,
+          phone: createPhone || undefined,
+          specialization: specialization || undefined,
+          experienceYears: experienceYears ? parseInt(experienceYears) : undefined,
+        });
+      }
 
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || "Tạo tài khoản học viên thành công!");
+        setSuccessMsg(response.data.message || "Tạo tài khoản thành công!");
         setIsCreateOpen(false);
         // Clear inputs
         setCreateEmail("");
@@ -152,11 +177,13 @@ export default function StudentManagement() {
         setStudentCode("");
         setDateOfBirth("");
         setAddress("");
-        fetchStudents();
+        setSpecialization("");
+        setExperienceYears("");
+        fetchUsers();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi tạo tài khoản học viên mới.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi tạo tài khoản mới.");
     }
   };
 
@@ -170,8 +197,8 @@ export default function StudentManagement() {
     setIsLockOpen(true);
   };
 
-  // Handle Lock Student Submit
-  const handleLockStudent = async (e: React.FormEvent) => {
+  // Handle Lock User Submit
+  const handleLockUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
     setErrorMsg("");
@@ -196,47 +223,47 @@ export default function StudentManagement() {
       });
 
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || `Đã khóa tài khoản học viên ${selectedUser.fullName}.`);
+        setSuccessMsg(response.data.message || `Đã khóa tài khoản ${selectedUser.fullName}.`);
         setIsLockOpen(false);
-        fetchStudents();
+        fetchUsers();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi thực hiện khóa tài khoản học viên.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi thực hiện khóa tài khoản.");
     }
   };
 
-  // Handle Unlock Student
-  const handleUnlockStudent = async (user: UserProfile) => {
-    if (!confirm(`Bạn có chắc chắn muốn mở khóa tài khoản của học viên ${user.fullName}?`)) return;
+  // Handle Unlock User
+  const handleUnlockUser = async (user: UserProfile) => {
+    if (!confirm(`Bạn có chắc chắn muốn mở khóa tài khoản của ${user.fullName}?`)) return;
     setErrorMsg("");
     setSuccessMsg("");
     try {
       const response = await axiosClient.post(`/users/${user.id}/unlock`);
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || `Đã mở khóa tài khoản học viên ${user.fullName}.`);
-        fetchStudents();
+        setSuccessMsg(response.data.message || `Đã mở khóa tài khoản ${user.fullName}.`);
+        fetchUsers();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi mở khóa tài khoản học viên.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi mở khóa tài khoản.");
     }
   };
 
-  // Handle Delete Student
-  const handleDeleteStudent = async (user: UserProfile) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của học viên ${user.fullName}? (Dữ liệu sẽ bị lưu trữ tạm thời)`)) return;
+  // Handle Delete User
+  const handleDeleteUser = async (user: UserProfile) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của ${user.fullName}? (Dữ liệu sẽ bị lưu trữ tạm thời)`)) return;
     setErrorMsg("");
     setSuccessMsg("");
     try {
       const response = await axiosClient.delete(`/users/${user.id}`);
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || "Xóa tài khoản học viên thành công.");
-        fetchStudents();
+        setSuccessMsg(response.data.message || "Xóa tài khoản thành công.");
+        fetchUsers();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản học viên.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản.");
     }
   };
 
@@ -270,15 +297,15 @@ export default function StudentManagement() {
       {/* Header and Add button */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface">Quản lý Học viên (Students)</h2>
-          <p className="text-on-surface-variant font-body-md">Danh sách, mã học viên và quản lý thông tin học tập của học viên.</p>
+          <h2 className="font-headline-lg text-headline-lg text-on-surface">Quản lý tài khoản</h2>
+          <p className="text-on-surface-variant font-body-md">Danh sách và phân quyền người dùng trong hệ thống EduCenter.</p>
         </div>
         <button
           onClick={() => setIsCreateOpen(true)}
           className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all self-start md:self-auto"
         >
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
-          Thêm học viên mới
+          Thêm tài khoản mới
         </button>
       </div>
 
@@ -289,8 +316,8 @@ export default function StudentManagement() {
             <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
           </div>
           <div>
-            <p className="text-label-md text-on-surface-variant">Tổng số học viên</p>
-            <h3 className="text-headline-md font-bold text-on-surface">{totalStudents}</h3>
+            <p className="text-label-md text-on-surface-variant">Tổng người dùng</p>
+            <h3 className="text-headline-md font-bold text-on-surface">{totalUsers}</h3>
           </div>
         </div>
 
@@ -299,7 +326,7 @@ export default function StudentManagement() {
             <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
           </div>
           <div>
-            <p className="text-label-md text-on-surface-variant">Đang hoạt động</p>
+            <p className="text-label-md text-on-surface-variant">Hoạt động</p>
             <h3 className="text-headline-md font-bold text-on-surface">{activeCount}</h3>
           </div>
         </div>
@@ -336,11 +363,26 @@ export default function StudentManagement() {
               value={searchQuery}
               onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2.5 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md font-body-md"
-              placeholder="Tìm theo tên, email, mã HV, địa chỉ..."
+              placeholder="Tìm theo tên, email, SĐT..."
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            {/* Role Filter */}
+            <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface hover:bg-surface-container transition-colors cursor-pointer group">
+              <span className="material-symbols-outlined text-outline group-hover:text-primary transition-colors">filter_list</span>
+              <select
+                value={roleFilter}
+                onChange={handleRoleFilterChange}
+                className="bg-transparent border-none focus:ring-0 text-label-md font-label-md p-0 pr-6 text-on-surface cursor-pointer focus:outline-none"
+              >
+                <option value="all">Vai trò: Tất cả</option>
+                <option value="admin">Admin</option>
+                <option value="lecturer">Giảng viên</option>
+                <option value="student">Học viên</option>
+              </select>
+            </div>
+
             {/* Status Filter */}
             <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface hover:bg-surface-container transition-colors cursor-pointer group">
               <span className="material-symbols-outlined text-outline group-hover:text-primary transition-colors">verified_user</span>
@@ -358,7 +400,7 @@ export default function StudentManagement() {
             </div>
 
             <button
-              onClick={fetchStudents}
+              onClick={fetchUsers}
               className="flex items-center gap-2 text-primary font-bold px-3 py-2 hover:bg-primary/5 rounded-lg transition-all"
             >
               <span className="material-symbols-outlined">refresh</span>
@@ -372,31 +414,31 @@ export default function StudentManagement() {
           {loading ? (
             <div className="p-12 text-center text-on-surface-variant font-medium">
               <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              Đang tải danh sách học viên...
+              Đang tải danh sách người dùng...
             </div>
-          ) : paginatedStudents.length === 0 ? (
+          ) : paginatedUsers.length === 0 ? (
             <div className="p-12 text-center text-on-surface-variant font-medium">
-              Không tìm thấy học viên nào phù hợp.
+              Không tìm thấy người dùng nào phù hợp.
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/50">
                   <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Họ và Tên</th>
-                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Mã học viên</th>
-                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Ngày sinh</th>
-                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Địa chỉ</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Vai trò</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Số điện thoại</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Ngày tạo</th>
                   <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái</th>
                   <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider text-right">Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/30">
-                {paginatedStudents.map((u) => (
+                {paginatedUsers.map((u) => (
                   <tr key={u.id} className={`hover:bg-surface-bright transition-colors group ${u.status === "locked" ? "bg-rose-50/20" : ""}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg overflow-hidden border border-slate-200">
-                          {u.fullName.split(" ").pop()?.charAt(0).toUpperCase() || "S"}
+                        <div className="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold text-lg overflow-hidden">
+                          {u.fullName.split(" ").pop()?.charAt(0).toUpperCase() || "U"}
                         </div>
                         <div>
                           <p className="font-bold text-on-surface">{u.fullName}</p>
@@ -405,17 +447,21 @@ export default function StudentManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-bold text-primary">
-                        {u.studentProfile?.studentCode || "—"}
-                      </span>
+                      {u.role === "admin" && (
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[12px] font-bold">Admin</span>
+                      )}
+                      {u.role === "lecturer" && (
+                        <span className="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-100 rounded-full text-[12px] font-bold">Giảng viên</span>
+                      )}
+                      {u.role === "student" && (
+                        <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[12px] font-bold">Học viên</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-body-md text-on-surface-variant">
-                      {u.studentProfile?.dateOfBirth
-                        ? new Date(u.studentProfile.dateOfBirth).toLocaleDateString("vi-VN")
-                        : "—"}
+                      {u.phone || "—"}
                     </td>
-                    <td className="px-6 py-4 text-body-md text-on-surface-variant max-w-[200px] truncate" title={u.studentProfile?.address || ""}>
-                      {u.studentProfile?.address || "—"}
+                    <td className="px-6 py-4 text-body-md text-on-surface-variant">
+                      {new Date(u.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="px-6 py-4">
                       {u.status === "active" && (
@@ -451,32 +497,34 @@ export default function StudentManagement() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {u.status === "locked" ? (
+                      {u.role !== "admin" && (
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {u.status === "locked" ? (
+                            <button
+                              onClick={() => handleUnlockUser(u)}
+                              className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-all"
+                              title="Mở khóa tài khoản"
+                            >
+                              <span className="material-symbols-outlined text-xl">lock_open</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenLock(u)}
+                              className="p-2 hover:bg-rose-50 rounded-lg text-rose-600 transition-all"
+                              title="Khóa tài khoản"
+                            >
+                              <span className="material-symbols-outlined text-xl">block</span>
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleUnlockStudent(u)}
-                            className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-all"
-                            title="Mở khóa học viên"
+                            onClick={() => handleDeleteUser(u)}
+                            className="p-2 hover:bg-rose-100 rounded-lg text-rose-600 transition-all"
+                            title="Xóa tài khoản"
                           >
-                            <span className="material-symbols-outlined text-xl">lock_open</span>
+                            <span className="material-symbols-outlined text-xl">delete</span>
                           </button>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenLock(u)}
-                            className="p-2 hover:bg-rose-50 rounded-lg text-rose-600 transition-all"
-                            title="Khóa học viên"
-                          >
-                            <span className="material-symbols-outlined text-xl">block</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteStudent(u)}
-                          className="p-2 hover:bg-rose-100 rounded-lg text-rose-600 transition-all"
-                          title="Xóa học viên"
-                        >
-                          <span className="material-symbols-outlined text-xl">delete</span>
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -488,8 +536,8 @@ export default function StudentManagement() {
         {/* Pagination Controls */}
         <div className="p-6 border-t border-outline-variant/30 flex items-center justify-between">
           <p className="text-caption text-on-surface-variant">
-            Hiển thị {filteredStudents.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredStudents.length)} trong tổng số {filteredStudents.length} học viên
+            Hiển thị {filteredUsers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} trong tổng số {filteredUsers.length} tài khoản
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -525,39 +573,67 @@ export default function StudentManagement() {
         </div>
       </div>
 
-      {/* CREATE STUDENT MODAL */}
+      {/* CREATE USER MODAL */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
-              <h3 className="text-headline-md font-bold text-on-surface">Thêm học viên mới</h3>
+              <h3 className="text-headline-md font-bold text-on-surface">Tạo tài khoản mới</h3>
               <button onClick={() => setIsCreateOpen(false)} className="text-outline hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleCreateStudent} className="space-y-4">
+            <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Email đăng nhập *</label>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Vai trò</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCreateRole("student")}
+                    className={`py-2 px-4 rounded-lg font-bold text-sm border transition-all ${
+                      createRole === "student"
+                        ? "bg-primary text-white border-primary"
+                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                    }`}
+                  >
+                    Học viên
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreateRole("lecturer")}
+                    className={`py-2 px-4 rounded-lg font-bold text-sm border transition-all ${
+                      createRole === "lecturer"
+                        ? "bg-primary text-white border-primary"
+                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                    }`}
+                  >
+                    Giảng viên
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Email đăng nhập</label>
                 <input
                   type="email"
                   required
                   value={createEmail}
                   onChange={(e) => setCreateEmail(e.target.value)}
                   className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="student@gmail.com"
+                  placeholder="name@educenter.edu.vn"
                 />
               </div>
 
               <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Họ và Tên học viên *</label>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Họ và Tên</label>
                 <input
                   type="text"
                   required
                   value={createFullName}
                   onChange={(e) => setCreateFullName(e.target.value)}
                   className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="Trần Anh Đức"
+                  placeholder="Nguyễn Văn A"
                 />
               </div>
 
@@ -572,38 +648,68 @@ export default function StudentManagement() {
                 />
               </div>
 
-              <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Mã học viên (duy nhất) *</label>
-                <input
-                  type="text"
-                  required
-                  value={studentCode}
-                  onChange={(e) => setStudentCode(e.target.value)}
-                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="HV1024"
-                />
-              </div>
+              {/* Student specific fields */}
+              {createRole === "student" && (
+                <>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Mã học viên (duy nhất)</label>
+                    <input
+                      type="text"
+                      required
+                      value={studentCode}
+                      onChange={(e) => setStudentCode(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                      placeholder="HV1001"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Ngày sinh</label>
+                    <input
+                      type="date"
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Địa chỉ</label>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                      placeholder="Hà Nội, Việt Nam"
+                    />
+                  </div>
+                </>
+              )}
 
-              <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Ngày sinh</label>
-                <input
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Địa chỉ</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="Hồ Chí Minh, Việt Nam"
-                />
-              </div>
+              {/* Lecturer specific fields */}
+              {createRole === "lecturer" && (
+                <>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Chuyên ngành</label>
+                    <input
+                      type="text"
+                      value={specialization}
+                      onChange={(e) => setSpecialization(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                      placeholder="Lập trình Mobile, UI/UX..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Số năm kinh nghiệm</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={experienceYears}
+                      onChange={(e) => setExperienceYears(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                      placeholder="3"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="flex justify-end gap-2 pt-4 border-t border-outline-variant/30">
                 <button
@@ -617,7 +723,7 @@ export default function StudentManagement() {
                   type="submit"
                   className="px-4 py-2 bg-primary text-white rounded-lg font-bold hover:opacity-90 text-sm transition-all shadow-md shadow-primary/10"
                 >
-                  Tạo tài khoản
+                  Lưu thay đổi
                 </button>
               </div>
             </form>
@@ -625,22 +731,22 @@ export default function StudentManagement() {
         </div>
       )}
 
-      {/* LOCK STUDENT MODAL */}
+      {/* LOCK USER MODAL */}
       {isLockOpen && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
-              <h3 className="text-headline-md font-bold text-on-surface">Khóa học viên</h3>
+              <h3 className="text-headline-md font-bold text-on-surface">Khóa tài khoản</h3>
               <button onClick={() => setIsLockOpen(false)} className="text-outline hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
             <p className="text-body-md text-on-surface-variant">
-              Bạn đang thực hiện khóa tài khoản của học viên <strong>{selectedUser.fullName}</strong> ({selectedUser.email}).
+              Bạn đang thực hiện khóa tài khoản của <strong>{selectedUser.fullName}</strong> ({selectedUser.email}).
             </p>
 
-            <form onSubmit={handleLockStudent} className="space-y-4">
+            <form onSubmit={handleLockUser} className="space-y-4">
               <div>
                 <label className="block text-label-md font-bold text-on-surface mb-1">Lý do khóa tài khoản *</label>
                 <textarea
@@ -689,7 +795,7 @@ export default function StudentManagement() {
                       value={lockDurationDays}
                       onChange={(e) => {
                         setLockDurationDays(e.target.value);
-                        setCustomLockDate("");
+                        setCustomLockDate(""); // Clear custom input
                       }}
                       className="w-full px-3 py-1.5 border border-outline-variant rounded-lg text-sm bg-white"
                     >

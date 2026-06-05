@@ -8,21 +8,20 @@ interface UserProfile {
   email: string;
   fullName: string;
   phone: string | null;
-  role: "student";
+  role: "lecturer";
   status: "active" | "inactive" | "locked" | "pending";
   createdAt: string;
   lastLoginAt: string | null;
   lockedUntil: string | null;
   lockReason: string | null;
-  studentProfile?: {
-    studentCode?: string | null;
-    dateOfBirth?: string | null;
-    address?: string | null;
+  lecturerProfile?: {
+    specialization?: string | null;
+    experienceYears?: number | null;
   } | null;
 }
 
-export default function StudentManagement() {
-  const [students, setStudents] = useState<UserProfile[]>([]);
+export default function LecturerManagement() {
+  const [tutors, setTutors] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -40,13 +39,12 @@ export default function StudentManagement() {
   const [isLockOpen, setIsLockOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
-  // Form states for Create Student
+  // Form states for Create Lecturer
   const [createEmail, setCreateEmail] = useState("");
   const [createFullName, setCreateFullName] = useState("");
   const [createPhone, setCreatePhone] = useState("");
-  const [studentCode, setStudentCode] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [address, setAddress] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [experienceYears, setExperienceYears] = useState("");
 
   // Form states for Lock User
   const [lockReason, setLockReason] = useState("");
@@ -55,37 +53,35 @@ export default function StudentManagement() {
   const [customLockDate, setCustomLockDate] = useState("");
 
   useEffect(() => {
-    fetchStudents();
+    fetchTutors();
   }, []);
 
-  const fetchStudents = async () => {
+  const fetchTutors = async () => {
     try {
       setLoading(true);
       setErrorMsg("");
-      const response = await axiosClient.get("/users/students");
+      const response = await axiosClient.get("/users/lecturers");
       if (response.data && response.data.success) {
-        setStudents(response.data.data || []);
+        setTutors(response.data.data || []);
       } else {
-        setErrorMsg("Không thể lấy danh sách học viên.");
+        setErrorMsg("Không thể lấy danh sách giảng viên.");
       }
     } catch (err: any) {
-      console.error("Fetch students error:", err);
-      setErrorMsg(err.response?.data?.message || "Có lỗi xảy ra khi tải dữ liệu học viên.");
+      console.error("Fetch tutors error:", err);
+      setErrorMsg(err.response?.data?.message || "Có lỗi xảy ra khi tải dữ liệu giảng viên.");
     } finally {
       setLoading(false);
     }
   };
 
   // Filter logic
-  const filteredStudents = students.filter((u) => {
+  const filteredTutors = tutors.filter((u) => {
     const matchesSearch =
       u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.phone && u.phone.includes(searchQuery)) ||
-      (u.studentProfile?.studentCode &&
-        u.studentProfile.studentCode.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (u.studentProfile?.address &&
-        u.studentProfile.address.toLowerCase().includes(searchQuery.toLowerCase()));
+      (u.lecturerProfile?.specialization &&
+        u.lecturerProfile.specialization.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -98,14 +94,14 @@ export default function StudentManagement() {
   });
 
   // Statistics
-  const totalStudents = students.length;
-  const activeCount = students.filter((u) => u.status === "active").length;
-  const lockedCount = students.filter((u) => u.status === "locked").length;
-  const pendingCount = students.filter((u) => u.status === "pending").length;
+  const totalTutors = tutors.length;
+  const activeCount = tutors.filter((u) => u.status === "active").length;
+  const lockedCount = tutors.filter((u) => u.status === "locked").length;
+  const pendingCount = tutors.filter((u) => u.status === "pending").length;
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE) || 1;
-  const paginatedStudents = filteredStudents.slice(
+  const totalPages = Math.ceil(filteredTutors.length / ITEMS_PER_PAGE) || 1;
+  const paginatedTutors = filteredTutors.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     (currentPage - 1) * ITEMS_PER_PAGE + ITEMS_PER_PAGE
   );
@@ -127,36 +123,34 @@ export default function StudentManagement() {
     setCurrentPage(1);
   };
 
-  // Handle Create Student Submit
-  const handleCreateStudent = async (e: React.FormEvent) => {
+  // Handle Create Lecturer Submit
+  const handleCreateLecturer = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const response = await axiosClient.post("/users/students", {
+      const response = await axiosClient.post("/users/lecturers", {
         email: createEmail,
         fullName: createFullName,
         phone: createPhone || undefined,
-        studentCode,
-        dateOfBirth: dateOfBirth || undefined,
-        address: address || undefined,
+        specialization: specialization || undefined,
+        experienceYears: experienceYears ? parseInt(experienceYears) : undefined,
       });
 
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || "Tạo tài khoản học viên thành công!");
+        setSuccessMsg(response.data.message || "Tạo tài khoản giảng viên thành công!");
         setIsCreateOpen(false);
         // Clear inputs
         setCreateEmail("");
         setCreateFullName("");
         setCreatePhone("");
-        setStudentCode("");
-        setDateOfBirth("");
-        setAddress("");
-        fetchStudents();
+        setSpecialization("");
+        setExperienceYears("");
+        fetchTutors();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi tạo tài khoản học viên mới.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi tạo tài khoản giảng viên mới.");
     }
   };
 
@@ -170,8 +164,8 @@ export default function StudentManagement() {
     setIsLockOpen(true);
   };
 
-  // Handle Lock Student Submit
-  const handleLockStudent = async (e: React.FormEvent) => {
+  // Handle Lock Lecturer Submit
+  const handleLockLecturer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
     setErrorMsg("");
@@ -196,47 +190,47 @@ export default function StudentManagement() {
       });
 
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || `Đã khóa tài khoản học viên ${selectedUser.fullName}.`);
+        setSuccessMsg(response.data.message || `Đã khóa tài khoản của GV. ${selectedUser.fullName}.`);
         setIsLockOpen(false);
-        fetchStudents();
+        fetchTutors();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi thực hiện khóa tài khoản học viên.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi thực hiện khóa tài khoản giảng viên.");
     }
   };
 
-  // Handle Unlock Student
-  const handleUnlockStudent = async (user: UserProfile) => {
-    if (!confirm(`Bạn có chắc chắn muốn mở khóa tài khoản của học viên ${user.fullName}?`)) return;
+  // Handle Unlock Lecturer
+  const handleUnlockLecturer = async (user: UserProfile) => {
+    if (!confirm(`Bạn có chắc chắn muốn mở khóa tài khoản của GV. ${user.fullName}?`)) return;
     setErrorMsg("");
     setSuccessMsg("");
     try {
       const response = await axiosClient.post(`/users/${user.id}/unlock`);
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || `Đã mở khóa tài khoản học viên ${user.fullName}.`);
-        fetchStudents();
+        setSuccessMsg(response.data.message || `Đã mở khóa tài khoản của GV. ${user.fullName}.`);
+        fetchTutors();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi mở khóa tài khoản học viên.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi mở khóa tài khoản giảng viên.");
     }
   };
 
-  // Handle Delete Student
-  const handleDeleteStudent = async (user: UserProfile) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của học viên ${user.fullName}? (Dữ liệu sẽ bị lưu trữ tạm thời)`)) return;
+  // Handle Delete Lecturer
+  const handleDeleteLecturer = async (user: UserProfile) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của GV. ${user.fullName}? (Dữ liệu sẽ bị lưu trữ tạm thời)`)) return;
     setErrorMsg("");
     setSuccessMsg("");
     try {
       const response = await axiosClient.delete(`/users/${user.id}`);
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || "Xóa tài khoản học viên thành công.");
-        fetchStudents();
+        setSuccessMsg(response.data.message || "Xóa tài khoản giảng viên thành công.");
+        fetchTutors();
       }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản học viên.");
+      setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản giảng viên.");
     }
   };
 
@@ -270,15 +264,15 @@ export default function StudentManagement() {
       {/* Header and Add button */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface">Quản lý Học viên (Students)</h2>
-          <p className="text-on-surface-variant font-body-md">Danh sách, mã học viên và quản lý thông tin học tập của học viên.</p>
+          <h2 className="font-headline-lg text-headline-lg text-on-surface">Quản lý Giảng viên (Tutors)</h2>
+          <p className="text-on-surface-variant font-body-md">Danh sách, chuyên ngành và quyền giảng dạy của giảng viên.</p>
         </div>
         <button
           onClick={() => setIsCreateOpen(true)}
           className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all self-start md:self-auto"
         >
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
-          Thêm học viên mới
+          Thêm giảng viên mới
         </button>
       </div>
 
@@ -286,11 +280,11 @@ export default function StudentManagement() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
         <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-[0px_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-5 group hover:border-primary/20 transition-all">
           <div className="w-14 h-14 bg-primary-fixed rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
           </div>
           <div>
-            <p className="text-label-md text-on-surface-variant">Tổng số học viên</p>
-            <h3 className="text-headline-md font-bold text-on-surface">{totalStudents}</h3>
+            <p className="text-label-md text-on-surface-variant">Tổng số giảng viên</p>
+            <h3 className="text-headline-md font-bold text-on-surface">{totalTutors}</h3>
           </div>
         </div>
 
@@ -336,7 +330,7 @@ export default function StudentManagement() {
               value={searchQuery}
               onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2.5 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md font-body-md"
-              placeholder="Tìm theo tên, email, mã HV, địa chỉ..."
+              placeholder="Tìm theo tên, email, chuyên ngành..."
             />
           </div>
 
@@ -358,7 +352,7 @@ export default function StudentManagement() {
             </div>
 
             <button
-              onClick={fetchStudents}
+              onClick={fetchTutors}
               className="flex items-center gap-2 text-primary font-bold px-3 py-2 hover:bg-primary/5 rounded-lg transition-all"
             >
               <span className="material-symbols-outlined">refresh</span>
@@ -372,31 +366,31 @@ export default function StudentManagement() {
           {loading ? (
             <div className="p-12 text-center text-on-surface-variant font-medium">
               <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              Đang tải danh sách học viên...
+              Đang tải danh sách giảng viên...
             </div>
-          ) : paginatedStudents.length === 0 ? (
+          ) : paginatedTutors.length === 0 ? (
             <div className="p-12 text-center text-on-surface-variant font-medium">
-              Không tìm thấy học viên nào phù hợp.
+              Không tìm thấy giảng viên nào phù hợp.
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/50">
                   <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Họ và Tên</th>
-                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Mã học viên</th>
-                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Ngày sinh</th>
-                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Địa chỉ</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Chuyên ngành</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider text-center">Kinh nghiệm (Năm)</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Số điện thoại</th>
                   <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái</th>
                   <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider text-right">Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/30">
-                {paginatedStudents.map((u) => (
+                {paginatedTutors.map((u) => (
                   <tr key={u.id} className={`hover:bg-surface-bright transition-colors group ${u.status === "locked" ? "bg-rose-50/20" : ""}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg overflow-hidden border border-slate-200">
-                          {u.fullName.split(" ").pop()?.charAt(0).toUpperCase() || "S"}
+                        <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-lg overflow-hidden border border-teal-100">
+                          {u.fullName.split(" ").pop()?.charAt(0).toUpperCase() || "T"}
                         </div>
                         <div>
                           <p className="font-bold text-on-surface">{u.fullName}</p>
@@ -405,17 +399,17 @@ export default function StudentManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-bold text-primary">
-                        {u.studentProfile?.studentCode || "—"}
+                      <span className="text-body-md font-medium text-on-surface">
+                        {u.lecturerProfile?.specialization || "Chưa cập nhật"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-body-md text-on-surface-variant">
-                      {u.studentProfile?.dateOfBirth
-                        ? new Date(u.studentProfile.dateOfBirth).toLocaleDateString("vi-VN")
+                    <td className="px-6 py-4 text-center text-body-md text-on-surface-variant">
+                      {u.lecturerProfile?.experienceYears !== undefined && u.lecturerProfile?.experienceYears !== null
+                        ? `${u.lecturerProfile.experienceYears} năm`
                         : "—"}
                     </td>
-                    <td className="px-6 py-4 text-body-md text-on-surface-variant max-w-[200px] truncate" title={u.studentProfile?.address || ""}>
-                      {u.studentProfile?.address || "—"}
+                    <td className="px-6 py-4 text-body-md text-on-surface-variant">
+                      {u.phone || "—"}
                     </td>
                     <td className="px-6 py-4">
                       {u.status === "active" && (
@@ -454,9 +448,9 @@ export default function StudentManagement() {
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {u.status === "locked" ? (
                           <button
-                            onClick={() => handleUnlockStudent(u)}
+                            onClick={() => handleUnlockLecturer(u)}
                             className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-all"
-                            title="Mở khóa học viên"
+                            title="Mở khóa giảng viên"
                           >
                             <span className="material-symbols-outlined text-xl">lock_open</span>
                           </button>
@@ -464,15 +458,15 @@ export default function StudentManagement() {
                           <button
                             onClick={() => handleOpenLock(u)}
                             className="p-2 hover:bg-rose-50 rounded-lg text-rose-600 transition-all"
-                            title="Khóa học viên"
+                            title="Khóa giảng viên"
                           >
                             <span className="material-symbols-outlined text-xl">block</span>
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteStudent(u)}
+                          onClick={() => handleDeleteLecturer(u)}
                           className="p-2 hover:bg-rose-100 rounded-lg text-rose-600 transition-all"
-                          title="Xóa học viên"
+                          title="Xóa giảng viên"
                         >
                           <span className="material-symbols-outlined text-xl">delete</span>
                         </button>
@@ -488,8 +482,8 @@ export default function StudentManagement() {
         {/* Pagination Controls */}
         <div className="p-6 border-t border-outline-variant/30 flex items-center justify-between">
           <p className="text-caption text-on-surface-variant">
-            Hiển thị {filteredStudents.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredStudents.length)} trong tổng số {filteredStudents.length} học viên
+            Hiển thị {filteredTutors.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredTutors.length)} trong tổng số {filteredTutors.length} giảng viên
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -525,18 +519,18 @@ export default function StudentManagement() {
         </div>
       </div>
 
-      {/* CREATE STUDENT MODAL */}
+      {/* CREATE LECTURER MODAL */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
-              <h3 className="text-headline-md font-bold text-on-surface">Thêm học viên mới</h3>
+              <h3 className="text-headline-md font-bold text-on-surface">Thêm giảng viên mới</h3>
               <button onClick={() => setIsCreateOpen(false)} className="text-outline hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <form onSubmit={handleCreateStudent} className="space-y-4">
+            <form onSubmit={handleCreateLecturer} className="space-y-4">
               <div>
                 <label className="block text-label-md font-bold text-on-surface mb-1">Email đăng nhập *</label>
                 <input
@@ -545,19 +539,19 @@ export default function StudentManagement() {
                   value={createEmail}
                   onChange={(e) => setCreateEmail(e.target.value)}
                   className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="student@gmail.com"
+                  placeholder="tutor@educenter.edu.vn"
                 />
               </div>
 
               <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Họ và Tên học viên *</label>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Họ và Tên giảng viên *</label>
                 <input
                   type="text"
                   required
                   value={createFullName}
                   onChange={(e) => setCreateFullName(e.target.value)}
                   className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="Trần Anh Đức"
+                  placeholder="Nguyễn Thành Nam"
                 />
               </div>
 
@@ -573,35 +567,25 @@ export default function StudentManagement() {
               </div>
 
               <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Mã học viên (duy nhất) *</label>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Chuyên ngành</label>
                 <input
                   type="text"
-                  required
-                  value={studentCode}
-                  onChange={(e) => setStudentCode(e.target.value)}
+                  value={specialization}
+                  onChange={(e) => setSpecialization(e.target.value)}
                   className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="HV1024"
+                  placeholder="Lập trình Fullstack, UI/UX Design..."
                 />
               </div>
 
               <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Ngày sinh</label>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Số năm kinh nghiệm</label>
                 <input
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  type="number"
+                  min="0"
+                  value={experienceYears}
+                  onChange={(e) => setExperienceYears(e.target.value)}
                   className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Địa chỉ</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="Hồ Chí Minh, Việt Nam"
+                  placeholder="5"
                 />
               </div>
 
@@ -625,22 +609,22 @@ export default function StudentManagement() {
         </div>
       )}
 
-      {/* LOCK STUDENT MODAL */}
+      {/* LOCK TUTOR MODAL */}
       {isLockOpen && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
-              <h3 className="text-headline-md font-bold text-on-surface">Khóa học viên</h3>
+              <h3 className="text-headline-md font-bold text-on-surface">Khóa giảng viên</h3>
               <button onClick={() => setIsLockOpen(false)} className="text-outline hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
             <p className="text-body-md text-on-surface-variant">
-              Bạn đang thực hiện khóa tài khoản của học viên <strong>{selectedUser.fullName}</strong> ({selectedUser.email}).
+              Bạn đang thực hiện khóa tài khoản của <strong>GV. {selectedUser.fullName}</strong> ({selectedUser.email}).
             </p>
 
-            <form onSubmit={handleLockStudent} className="space-y-4">
+            <form onSubmit={handleLockLecturer} className="space-y-4">
               <div>
                 <label className="block text-label-md font-bold text-on-surface mb-1">Lý do khóa tài khoản *</label>
                 <textarea

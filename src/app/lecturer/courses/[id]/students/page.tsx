@@ -1,1 +1,5 @@
-// List of students in the course
+import React from 'react';
+
+export default function Page() {
+  return <div>Placeholder Page</div>;
+}
