@@ -13,7 +13,16 @@ export default function Home() {
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    if (user) {
+      if (user.role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (user.role === "lecturer") {
+        router.push("/lecturer/dashboard");
+      } else if (user.role === "student") {
+        router.push("/student/dashboard");
+      }
+    }
+  }, [user, router]);
 
   const handleLogout = async () => {
     try {

@@ -35,8 +35,19 @@ export function LoginForm() {
     try {
       const response = await authApi.login(data);
       if (response.success) {
-        setAuth(response.data.user, response.data.accessToken);
-        router.push("/");
+        const user = response.data.user;
+        setAuth(user, response.data.accessToken);
+        
+        // Điều hướng dựa trên vai trò (role)
+        if (user.role === "admin") {
+          router.push("/admin/dashboard");
+        } else if (user.role === "lecturer") {
+          router.push("/lecturer/dashboard");
+        } else if (user.role === "student") {
+          router.push("/student/dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (error: any) {
       if (error.response?.data?.message) {
