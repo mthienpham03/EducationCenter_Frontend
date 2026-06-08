@@ -27,41 +27,41 @@ export default function StudentDashboard() {
       <aside className="h-full w-72 fixed left-0 top-0 flex flex-col p-stack-md bg-surface-container-lowest shadow-sm border-r border-outline-variant z-50 overflow-y-auto">
         <div className="mb-10">
           <h1 className="text-headline-md font-headline-md font-bold text-primary">EduCenter</h1>
-          <p className="text-label-md font-label-md text-on-surface-variant">Student Portal</p>
+          <p className="text-label-md font-label-md text-on-surface-variant">Cổng học viên</p>
         </div>
         <nav className="flex-1 flex flex-col gap-2">
           <Link href="#" className="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-md transition-all duration-200 active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>school</span>
-            <span>Course Management</span>
+            <span>Quản lý khóa học</span>
           </Link>
           <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>folder_open</span>
-            <span>Documents</span>
+            <span>Tài liệu</span>
           </Link>
           <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>quiz</span>
-            <span>Quizzes</span>
+            <span>Bài kiểm tra</span>
           </Link>
           <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>calendar_month</span>
-            <span>Schedule</span>
+            <span>Lịch học</span>
           </Link>
           <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>insights</span>
-            <span>Progress Reports</span>
+            <span>Báo cáo tiến độ</span>
           </Link>
         </nav>
         <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-outline-variant">
           <button className="w-full mb-4 py-3 px-4 bg-secondary text-on-secondary rounded-xl font-label-md hover:opacity-90 transition-all">
-            View All Classes
+            Xem tất cả lớp học
           </button>
           <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg font-label-md">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>settings</span>
-            <span>Settings</span>
+            <span>Cài đặt</span>
           </Link>
           <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-error hover:bg-error-container transition-all rounded-lg font-label-md">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>logout</span>
-            <span>Logout</span>
+            <span>Đăng xuất</span>
           </button>
         </div>
       </aside>
@@ -72,9 +72,9 @@ export default function StudentDashboard() {
         <header className="sticky top-0 w-full z-40 flex justify-between items-center px-margin-desktop py-4 bg-surface shadow-sm">
           <div className="flex items-center gap-8">
             <div className="hidden lg:flex gap-6">
-              <Link href="#" className="text-primary border-b-2 border-primary pb-1 font-label-md transition-all duration-200">Dashboard</Link>
-              <Link href="#" className="text-on-surface-variant hover:text-primary transition-colors font-label-md">Notifications</Link>
-              <Link href="#" className="text-on-surface-variant hover:text-primary transition-colors font-label-md">Help</Link>
+              <Link href="#" className="text-primary border-b-2 border-primary pb-1 font-label-md transition-all duration-200">Bảng điều khiển</Link>
+              <Link href="#" className="text-on-surface-variant hover:text-primary transition-colors font-label-md">Thông báo</Link>
+              <Link href="#" className="text-on-surface-variant hover:text-primary transition-colors font-label-md">Hỗ trợ</Link>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -83,7 +83,7 @@ export default function StudentDashboard() {
               <input className="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-body-md focus:outline-none focus:border-primary w-64" placeholder="Tìm kiếm khóa học..." type="text" />
             </div>
             <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md hover:bg-primary-container transition-all">
-              Enroll New Course
+              Đăng ký khóa học mới
             </button>
             <div className="flex items-center gap-2 ml-2">
               <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
@@ -154,7 +154,7 @@ export default function StudentDashboard() {
               <div className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/20 transition-all overflow-hidden flex flex-col md:flex-row h-full">
                 <div className="md:w-2/5 relative h-48 md:h-auto overflow-hidden">
                   <img alt="UI/UX Design Course" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTwx0wIFX9LkNoW-poUrb8KAIv4VVO15Ul8gBOFIEwzF6K13rNjdDp0BwBkx8GbZUnbGzmpo5Lmv_CBxJNSB6Vncny6lLw-mDxWNfmWLsObxtv2wwDlywbtYaTvIfFz8ZXPo8poGyC_dou7DKs9Gg51KqimcdhSxcD0IE7_koqBYjB9TknFlX-Fy1vLucSkC8i7K3cfVmwpe3UKmmIQ_tqQuz-CJ1hrvcZG80L4JIzrgl_nLvgWG4CWy50Jhb6my--G72PPyWwTBvq" />
-                  <div className="absolute top-4 left-4 bg-primary px-3 py-1 rounded-full text-caption text-on-primary font-bold">Design</div>
+                  <div className="absolute top-4 left-4 bg-primary px-3 py-1 rounded-full text-caption text-on-primary font-bold">Thiết kế</div>
                 </div>
                 <div className="md:w-3/5 p-6 flex flex-col">
                   <div className="mb-4">
@@ -183,7 +183,7 @@ export default function StudentDashboard() {
               <div className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/20 transition-all overflow-hidden flex flex-col md:flex-row h-full">
                 <div className="md:w-2/5 relative h-48 md:h-auto overflow-hidden">
                   <img alt="Fullstack Web Course" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbtLTkZfruv0WkYaGvK_5HvKKoqtkNXzvxXZQyL_8MO6F8IG3Q6a-c91vV9VDlz6fccLgAX5AY-GdrykMui8jRYRqDrXYAcU5B9xVTz8eMi1nROtLSL8f1MmNPKggOnDGztMpky_9rZZJALiUNBK1Qnt7E-u-59R5a-e--um0tHNWFJLAQZTXE7ZLcLUvOWHV-prtQd2Ked7-P9sk_IxxG6sSE2aLrsb7Eq3pXHNudDO-GJxhgb95TfwhAeW1v1_HGplZRzN2YY4oF" />
-                  <div className="absolute top-4 left-4 bg-secondary px-3 py-1 rounded-full text-caption text-on-primary font-bold">Programming</div>
+                  <div className="absolute top-4 left-4 bg-secondary px-3 py-1 rounded-full text-caption text-on-primary font-bold">Lập trình</div>
                 </div>
                 <div className="md:w-3/5 p-6 flex flex-col">
                   <div className="mb-4">
@@ -212,7 +212,7 @@ export default function StudentDashboard() {
               <div className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/20 transition-all overflow-hidden flex flex-col md:flex-row h-full">
                 <div className="md:w-2/5 relative h-48 md:h-auto overflow-hidden">
                   <img alt="Digital Marketing" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAkZw1ahdZKuwH9mWccCpRAB2UqnBuI3YnlrY3Bvn9QFlm6_HBZVmVNivd04etqJCUurQrc2foT3qEtrLNKQ6XMBhSv5vwRcEmTLUVXRh7350ElkwWV9ASdv6EQBOhPzDpakhj4UrTyrXwpLtyyK4TNsmQux8gNakWZ0GiHtrta_pKmqLfkj_-BpwOFe8G39cdbrMs6ECcz2UJqYV95M02qnlLAHpUTe-yzJH3xUdPLy-plgsuH4yLGYnZSeuly2SqQVopC79UpS8j" />
-                  <div className="absolute top-4 left-4 bg-tertiary-container px-3 py-1 rounded-full text-caption text-on-primary font-bold">Marketing</div>
+                  <div className="absolute top-4 left-4 bg-tertiary-container px-3 py-1 rounded-full text-caption text-on-primary font-bold">Tiếp thị</div>
                 </div>
                 <div className="md:w-3/5 p-6 flex flex-col">
                   <div className="mb-4">

@@ -41,7 +41,7 @@ export default function LecturerCoursesPage() {
             category: "IELTS Prep",
             studentsCount: 48,
             chaptersCount: 12,
-            duration: "18.5 hours",
+            duration: "18.5 giờ",
             status: "Active",
             description: "Chương trình đào tạo toàn diện 4 kỹ năng IELTS chuẩn Cambridge, cam kết đầu ra 6.5+ cho học viên.",
             rating: 4.9,
@@ -54,7 +54,7 @@ export default function LecturerCoursesPage() {
             category: "IELTS Prep",
             studentsCount: 32,
             chaptersCount: 8,
-            duration: "12 hours",
+            duration: "12 giờ",
             status: "Active",
             description: "Khóa học chuyên sâu phát triển tư duy viết, phân tích biểu đồ và nghị luận xã hội kèm nhận xét chi tiết.",
             rating: 4.8,
@@ -67,7 +67,7 @@ export default function LecturerCoursesPage() {
             category: "TOEIC Prep",
             studentsCount: 0,
             chaptersCount: 6,
-            duration: "10 hours",
+            duration: "10 giờ",
             status: "Draft",
             description: "Hệ thống từ vựng cốt lõi và các bẫy thường gặp trong phần nghe/đọc của bài thi TOEIC định dạng mới.",
             rating: 0,
@@ -222,7 +222,7 @@ export default function LecturerCoursesPage() {
                       ? "bg-green-500/20 text-green-300 border border-green-400/30" 
                       : "bg-yellow-500/20 text-yellow-300 border border-yellow-400/30"
                   }`}>
-                    {course.status}
+                    {course.status === "Active" ? "Đang hoạt động" : course.status === "Draft" ? "Bản nháp" : "Lưu trữ"}
                   </span>
                 </div>
                 <div className="z-10">

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { axiosClient } from "@/lib/api/axios";
+import Link from "next/link";
 
 interface UserProfile {
   id: string;
@@ -273,13 +274,22 @@ export default function StudentManagement() {
           <h2 className="font-headline-lg text-headline-lg text-on-surface">Quản lý Học viên (Students)</h2>
           <p className="text-on-surface-variant font-body-md">Danh sách, mã học viên và quản lý thông tin học tập của học viên.</p>
         </div>
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all self-start md:self-auto"
-        >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
-          Thêm học viên mới
-        </button>
+        <div className="flex gap-3 self-start md:self-auto flex-wrap">
+          <Link
+            href="/admin/students/import"
+            className="flex items-center gap-2 bg-surface-container-high border border-outline text-on-surface px-6 py-3 rounded-lg font-bold hover:bg-surface-container-highest transition-all"
+          >
+            <span className="material-symbols-outlined">upload_file</span>
+            Nhập từ Excel
+          </Link>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+          >
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
+            Thêm học viên mới
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}

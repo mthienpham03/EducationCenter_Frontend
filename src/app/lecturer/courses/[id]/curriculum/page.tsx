@@ -52,7 +52,7 @@ export default function CurriculumPage() {
             title: "Data Comparison and Contrasting",
             order: 2,
             lessons: [
-              { id: "l3", title: "Quiz: Comparing Bar Charts", type: "quiz", meta: "10 Questions • Advanced" },
+              { id: "l3", title: "Quiz: Comparing Bar Charts", type: "quiz", meta: "10 Câu hỏi • Nâng cao" },
             ],
           },
         ]);
@@ -73,7 +73,7 @@ export default function CurriculumPage() {
     }));
   };
 
-  if (loading) return <div className="p-stack-md max-w-container-max mx-auto text-center">Loading...</div>;
+  if (loading) return <div className="p-stack-md max-w-container-max mx-auto text-center">Đang tải...</div>;
 
   return (
     <div className="p-stack-md max-w-container-max mx-auto">
@@ -105,13 +105,13 @@ export default function CurriculumPage() {
                 <h3 className="font-headline-md text-on-surface">{chapter.title}</h3>
               </div>
               <div className="flex items-center gap-base">
-                <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
+                <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Chỉnh sửa">
                   <span className="material-symbols-outlined">edit</span>
                 </button>
-                <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Hide">
+                <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" title="Ẩn">
                   <span className="material-symbols-outlined">visibility_off</span>
                 </button>
-                <button className="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Delete">
+                <button className="p-2 text-error hover:bg-error-container rounded-lg transition-colors" title="Xóa">
                   <span className="material-symbols-outlined">delete</span>
                 </button>
                 <button
@@ -192,7 +192,7 @@ export default function CurriculumPage() {
           <span className="text-label-md font-label-md text-on-surface-variant">Bài kiểm tra</span>
         </div>
         <div className="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] flex flex-col items-center">
-          <span className="text-headline-xl font-headline-xl text-on-surface">18.5h</span>
+          <span className="text-headline-xl font-headline-xl text-on-surface">18.5 giờ</span>
           <span className="text-label-md font-label-md text-on-surface-variant">Tổng thời lượng</span>
         </div>
       </div>

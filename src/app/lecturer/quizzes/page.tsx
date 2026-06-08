@@ -4,9 +4,9 @@ import { useState } from "react";
 
 export default function LecturerQuizzesPage() {
   const [quizzes] = useState([
-    { id: 1, title: "IELTS Listening Practice - Test 1", questions: 40, duration: "30 mins", status: "Published" },
-    { id: 2, title: "Comparing Bar Charts & Line Graphs", questions: 10, duration: "15 mins", status: "Published" },
-    { id: 3, title: "Grammar Quiz - Conditional Sentences", questions: 20, duration: "20 mins", status: "Draft" },
+    { id: 1, title: "IELTS Listening Practice - Test 1", questions: 40, duration: "30 phút", status: "Published" },
+    { id: 2, title: "Comparing Bar Charts & Line Graphs", questions: 10, duration: "15 phút", status: "Published" },
+    { id: 3, title: "Grammar Quiz - Conditional Sentences", questions: 20, duration: "20 phút", status: "Draft" },
   ]);
 
   return (
@@ -35,7 +35,7 @@ export default function LecturerQuizzesPage() {
                 <span className={`px-2.5 py-0.5 rounded-full text-caption font-semibold ${
                   quiz.status === "Published" ? "bg-green-500/10 text-green-600" : "bg-yellow-500/10 text-yellow-600"
                 }`}>
-                  {quiz.status}
+                  {quiz.status === "Published" ? "Đã xuất bản" : "Bản nháp"}
                 </span>
               </div>
               <h3 className="font-headline-md text-lg text-on-surface font-semibold line-clamp-1">{quiz.title}</h3>

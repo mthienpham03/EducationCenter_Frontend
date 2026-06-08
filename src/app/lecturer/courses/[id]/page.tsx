@@ -1,5 +1,5 @@
 import React from 'react';
 
 export default function Page() {
-  return <div>Placeholder Page</div>;
+  return <div className="p-8 text-center text-on-surface-variant font-body-md">Trang Chi tiết khóa học (Giảng viên) đang phát triển</div>;
 }

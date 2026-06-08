@@ -26,14 +26,14 @@ export default function AdminLayout({
   };
 
   const menuItems = [
-    { href: "/admin/dashboard", icon: "dashboard", label: "Dashboard" },
-    { href: "/admin/users", icon: "admin_panel_settings", label: "Admin" },
-    { href: "/admin/lecturers", icon: "school", label: "Tutors" },
-    { href: "/admin/students", icon: "group", label: "Students" },
-    { href: "/admin/courses", icon: "library_books", label: "Courses" },
-    { href: "/admin/quizzes", icon: "quiz", label: "Quiz & Exams" },
-    { href: "/admin/schedules", icon: "calendar_month", label: "Schedules" },
-    { href: "/admin/reports", icon: "assessment", label: "Reports" },
+    { href: "/admin/dashboard", icon: "dashboard", label: "Bảng điều khiển" },
+    { href: "/admin/users", icon: "admin_panel_settings", label: "Quản trị viên" },
+    { href: "/admin/lecturers", icon: "school", label: "Giảng viên" },
+    { href: "/admin/students", icon: "group", label: "Học viên" },
+    { href: "/admin/courses", icon: "library_books", label: "Khóa học" },
+    { href: "/admin/quizzes", icon: "quiz", label: "Đề thi & Kiểm tra" },
+    { href: "/admin/schedules", icon: "calendar_month", label: "Lịch học" },
+    { href: "/admin/reports", icon: "assessment", label: "Báo cáo" },
   ];
 
   return (
@@ -60,7 +60,7 @@ export default function AdminLayout({
             </div>
             <div>
               <h1 className="font-headline-md text-headline-md font-black text-primary leading-tight">EduCenter</h1>
-              <p className="text-xs text-on-surface-variant font-medium">Management Portal</p>
+              <p className="text-xs text-on-surface-variant font-medium">Cổng Quản Trị</p>
             </div>
           </div>
           <nav className="flex-1 px-2 space-y-1 sidebar-scroll overflow-y-auto">
@@ -90,17 +90,17 @@ export default function AdminLayout({
           <div className="px-2 pt-4 border-t border-outline-variant">
             <button className="w-full bg-primary text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all">
               <span className="material-symbols-outlined">add</span>
-              <span>Thêm Course</span>
+              <span>Thêm Khóa Học</span>
             </button>
           </div>
           <div className="mt-auto px-2 pb-4 space-y-1">
             <Link href="#" className="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all">
               <span className="material-symbols-outlined">settings</span>
-              <span className="font-label-md text-label-md">Settings</span>
+              <span className="font-label-md text-label-md">Cài đặt</span>
             </Link>
             <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-error hover:bg-error-container/20 rounded-lg transition-all">
               <span className="material-symbols-outlined">logout</span>
-              <span className="font-label-md text-label-md">Logout</span>
+              <span className="font-label-md text-label-md">Đăng xuất</span>
             </button>
           </div>
         </aside>
@@ -127,7 +127,7 @@ export default function AdminLayout({
                   <p className="font-label-md text-label-md text-on-surface leading-none">
                     {mounted ? user?.fullName || "Admin" : "Admin"}
                   </p>
-                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">Super Administrator</p>
+                  <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">Quản Trị Viên Cao Cấp</p>
                 </div>
                 <img alt="User Profile Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKqpoSQTK4ZTRaZGPpqXw0nJsr3Tzcc7F1utCBkanBtSd4ixuwduA5rjzTtwveak9O556huC5-u8IBqgY54e1l4SzJmAncB5Jh4HGfbxuGc1RnLFbAh_1Axl17wGzHWRYVezKvFLXmznolNEibjfRflhhWyVhbBj1fuHL6Pk6ma_Cq6HM18cf_7m47uURAGVNjzqyc6lPeX7CJt37Pn2Cij13pkd_9_9Irqr4NjK2n5fyFrGJhZlkrprgLg6iYOFek2Ji5NqTpK5wS" />
               </div>

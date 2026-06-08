@@ -16,7 +16,7 @@ export default function TopNavBar() {
     <header className="w-full h-16 sticky top-0 bg-surface-container-lowest dark:bg-surface-container-high shadow-sm dark:border-b dark:border-outline-variant flex justify-between items-center px-margin-desktop max-w-container-max mx-auto z-40">
       <div className="flex items-center gap-stack-sm overflow-hidden">
         <div className="flex items-center gap-2 text-on-surface-variant font-label-md">
-          <span>{/* Breadcrumbs có thể động sau */} Dashboard</span>
+          <span>{/* Breadcrumbs có thể động sau */} Bảng điều khiển</span>
         </div>
       </div>
       <div className="flex items-center gap-stack-md">
@@ -34,7 +34,7 @@ export default function TopNavBar() {
                </div>
                <button onClick={handleLogout} className="flex items-center gap-2 p-3 text-error hover:bg-error-container/20 text-sm text-left">
                   <span className="material-symbols-outlined text-sm">logout</span>
-                  Logout
+                  Đăng xuất
                </button>
             </div>
           </div>
