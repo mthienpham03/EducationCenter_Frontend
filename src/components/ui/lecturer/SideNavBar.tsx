@@ -44,10 +44,17 @@ export default function SideNavBar() {
           <span className="material-symbols-outlined">add</span>
           Khóa học mới
         </button>
-        <div className="flex items-center gap-base p-base mb-1 cursor-pointer text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-all rounded-lg">
+        <Link
+          href="/lecturer/profile"
+          className={`flex items-center gap-base p-base mb-1 cursor-pointer transition-all rounded-lg ${
+            pathname === "/lecturer/profile"
+              ? "bg-primary-container text-on-primary-container font-bold"
+              : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"
+          }`}
+        >
           <span className="material-symbols-outlined">settings</span>
           <span className="font-label-md text-label-md">Cài đặt</span>
-        </div>
+        </Link>
       </div>
     </aside>
   );

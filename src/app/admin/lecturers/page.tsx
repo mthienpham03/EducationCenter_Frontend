@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { axiosClient } from "@/lib/api/axios";
+import { specializationApi, Specialization } from "@/lib/api/specialization.api";
 
 interface UserProfile {
   id: string;
   email: string;
   fullName: string;
   phone: string | null;
+  avatarUrl?: string | null;
   role: "lecturer";
   status: "active" | "inactive" | "locked" | "pending";
   createdAt: string;
@@ -15,13 +17,14 @@ interface UserProfile {
   lockedUntil: string | null;
   lockReason: string | null;
   lecturerProfile?: {
-    specialization?: string | null;
+    specializations?: Array<{ id: string; name: string; code: string }> | null;
     experienceYears?: number | null;
   } | null;
 }
 
 export default function LecturerManagement() {
   const [tutors, setTutors] = useState<UserProfile[]>([]);
+  const [availableSpecs, setAvailableSpecs] = useState<Specialization[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -43,8 +46,11 @@ export default function LecturerManagement() {
   const [createEmail, setCreateEmail] = useState("");
   const [createFullName, setCreateFullName] = useState("");
   const [createPhone, setCreatePhone] = useState("");
-  const [specialization, setSpecialization] = useState("");
+  const [specializationIds, setSpecializationIds] = useState<string[]>([]);
+  const [specSearchQuery, setSpecSearchQuery] = useState("");
   const [experienceYears, setExperienceYears] = useState("");
+  const [createAvatarUrl, setCreateAvatarUrl] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Form states for Lock User
   const [lockReason, setLockReason] = useState("");
@@ -54,7 +60,17 @@ export default function LecturerManagement() {
 
   useEffect(() => {
     fetchTutors();
+    fetchAvailableSpecs();
   }, []);
+
+  const fetchAvailableSpecs = async () => {
+    try {
+      const data = await specializationApi.getSpecializations();
+      setAvailableSpecs(data || []);
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách chuyên ngành:", err);
+    }
+  };
 
   const fetchTutors = async () => {
     try {
@@ -80,8 +96,11 @@ export default function LecturerManagement() {
       u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.phone && u.phone.includes(searchQuery)) ||
-      (u.lecturerProfile?.specialization &&
-        u.lecturerProfile.specialization.toLowerCase().includes(searchQuery.toLowerCase()));
+      (u.lecturerProfile?.specializations &&
+        u.lecturerProfile.specializations.some((spec) =>
+          spec.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          spec.code.toLowerCase().includes(searchQuery.toLowerCase())
+        ));
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -133,8 +152,9 @@ export default function LecturerManagement() {
         email: createEmail,
         fullName: createFullName,
         phone: createPhone || undefined,
-        specialization: specialization || undefined,
+        specializationIds: specializationIds,
         experienceYears: experienceYears ? parseInt(experienceYears) : undefined,
+        avatarUrl: createAvatarUrl || undefined,
       });
 
       if (response.data && response.data.success) {
@@ -144,13 +164,37 @@ export default function LecturerManagement() {
         setCreateEmail("");
         setCreateFullName("");
         setCreatePhone("");
-        setSpecialization("");
+        setSpecializationIds([]);
+        setSpecSearchQuery("");
         setExperienceYears("");
+        setCreateAvatarUrl("");
         fetchTutors();
       }
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.response?.data?.message || "Lỗi khi tạo tài khoản giảng viên mới.");
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingAvatar(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await axiosClient.post("/users/upload-avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (response.data && response.data.success) {
+        setCreateAvatarUrl(response.data.data.url);
+      }
+    } catch (err) {
+      console.error("Lỗi khi upload avatar giảng viên mới:", err);
+      alert("Không thể tải ảnh đại diện lên.");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -390,7 +434,11 @@ export default function LecturerManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-lg overflow-hidden border border-teal-100">
-                          {u.fullName.split(" ").pop()?.charAt(0).toUpperCase() || "T"}
+                          {u.avatarUrl ? (
+                            <img src={u.avatarUrl} alt={u.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            u.fullName.split(" ").pop()?.charAt(0).toUpperCase() || "T"
+                          )}
                         </div>
                         <div>
                           <p className="font-bold text-on-surface">{u.fullName}</p>
@@ -399,9 +447,17 @@ export default function LecturerManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-body-md font-medium text-on-surface">
-                        {u.lecturerProfile?.specialization || "Chưa cập nhật"}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {u.lecturerProfile?.specializations && u.lecturerProfile.specializations.length > 0 ? (
+                          u.lecturerProfile.specializations.map((spec) => (
+                            <span key={spec.id} className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded border border-primary/20" title={spec.name}>
+                              {spec.code}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-on-surface-variant text-xs font-semibold">Chưa cập nhật</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-center text-body-md text-on-surface-variant">
                       {u.lecturerProfile?.experienceYears !== undefined && u.lecturerProfile?.experienceYears !== null
@@ -525,12 +581,41 @@ export default function LecturerManagement() {
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
               <h3 className="text-headline-md font-bold text-on-surface">Thêm giảng viên mới</h3>
-              <button onClick={() => setIsCreateOpen(false)} className="text-outline hover:text-on-surface">
+              <button onClick={() => { setIsCreateOpen(false); setSpecSearchQuery(""); }} className="text-outline hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
             <form onSubmit={handleCreateLecturer} className="space-y-4">
+              <div className="flex flex-col items-center gap-2 pb-2 border-b border-outline-variant/20">
+                <div className="relative w-20 h-20 rounded-full border border-outline-variant bg-slate-50 flex items-center justify-center overflow-hidden shadow-inner">
+                  {createAvatarUrl ? (
+                    <img src={createAvatarUrl} alt="New Lecturer Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-4xl text-outline-variant">person</span>
+                  )}
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  id="lecturer-avatar-file"
+                  onChange={handleAvatarUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("lecturer-avatar-file")?.click()}
+                  className="px-3 py-1 border border-outline-variant hover:bg-surface-container rounded-lg text-xs font-bold transition-all text-on-surface-variant cursor-pointer"
+                >
+                  Chọn ảnh đại diện
+                </button>
+              </div>
+
               <div>
                 <label className="block text-label-md font-bold text-on-surface mb-1">Email đăng nhập *</label>
                 <input
@@ -567,14 +652,56 @@ export default function LecturerManagement() {
               </div>
 
               <div>
-                <label className="block text-label-md font-bold text-on-surface mb-1">Chuyên ngành</label>
-                <input
-                  type="text"
-                  value={specialization}
-                  onChange={(e) => setSpecialization(e.target.value)}
-                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
-                  placeholder="Lập trình Fullstack, UI/UX Design..."
-                />
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-label-md font-bold text-on-surface">Chuyên ngành giảng dạy</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">search</span>
+                    <input
+                      type="text"
+                      placeholder="Tìm..."
+                      value={specSearchQuery}
+                      onChange={(e) => setSpecSearchQuery(e.target.value)}
+                      className="pl-6 pr-2 py-0.5 border border-outline-variant rounded-md text-[10px] outline-none focus:border-primary transition-all max-w-[120px]"
+                    />
+                  </div>
+                </div>
+                <div className="border border-outline-variant rounded-lg p-3 max-h-36 overflow-y-auto space-y-2 bg-slate-50 shadow-inner">
+                  {(() => {
+                    const filtered = availableSpecs.filter(
+                      (spec) =>
+                        spec.name.toLowerCase().includes(specSearchQuery.toLowerCase()) ||
+                        spec.code.toLowerCase().includes(specSearchQuery.toLowerCase())
+                    );
+                    if (filtered.length === 0) {
+                      return (
+                        <p className="text-xs text-on-surface-variant font-medium">
+                          {specSearchQuery ? "Không tìm thấy chuyên ngành." : "Chưa có chuyên ngành nào. Hãy tạo ở trang Chuyên ngành."}
+                        </p>
+                      );
+                    }
+                    return filtered.map((spec) => {
+                      const isChecked = specializationIds.includes(spec.id);
+                      return (
+                        <label key={spec.id} className="flex items-center gap-2 text-sm text-on-surface cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSpecializationIds(specializationIds.filter((id) => id !== spec.id));
+                              } else {
+                                setSpecializationIds([...specializationIds, spec.id]);
+                              }
+                            }}
+                            className="rounded border-outline-variant text-primary focus:ring-primary"
+                          />
+                          <span className="font-semibold text-xs bg-primary-fixed/30 text-primary-fixed-variant px-1.5 py-0.5 rounded font-mono mr-1">{spec.code}</span>
+                          <span className="font-medium text-xs text-on-surface">{spec.name}</span>
+                        </label>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
 
               <div>
@@ -592,7 +719,7 @@ export default function LecturerManagement() {
               <div className="flex justify-end gap-2 pt-4 border-t border-outline-variant/30">
                 <button
                   type="button"
-                  onClick={() => setIsCreateOpen(false)}
+                  onClick={() => { setIsCreateOpen(false); setSpecSearchQuery(""); }}
                   className="px-4 py-2 border border-outline-variant rounded-lg font-bold hover:bg-surface-container text-on-surface-variant text-sm transition-all"
                 >
                   Hủy

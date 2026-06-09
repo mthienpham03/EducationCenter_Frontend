@@ -25,7 +25,11 @@ export default function TopNavBar() {
           <span className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 rounded-full hover:bg-surface-container-low">help</span>
           <div className="flex items-center gap-2 cursor-pointer group relative">
             <div className="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden">
-              <span className="material-symbols-outlined text-primary">person</span>
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.fullName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="material-symbols-outlined text-primary">person</span>
+              )}
             </div>
             <div className="hidden absolute right-0 top-10 w-48 bg-white shadow-md border border-outline-variant rounded-lg group-hover:flex flex-col overflow-hidden">
                <div className="p-3 border-b border-outline-variant">

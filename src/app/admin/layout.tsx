@@ -30,6 +30,7 @@ export default function AdminLayout({
     { href: "/admin/users", icon: "admin_panel_settings", label: "Quản trị viên" },
     { href: "/admin/lecturers", icon: "school", label: "Giảng viên" },
     { href: "/admin/students", icon: "group", label: "Học viên" },
+    { href: "/admin/specializations", icon: "category", label: "Chuyên ngành" },
     { href: "/admin/courses", icon: "library_books", label: "Khóa học" },
     { href: "/admin/quizzes", icon: "quiz", label: "Đề thi & Kiểm tra" },
     { href: "/admin/schedules", icon: "calendar_month", label: "Lịch học" },

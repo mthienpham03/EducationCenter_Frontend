@@ -6,6 +6,7 @@ export interface User {
   email: string;
   fullName: string;
   role: string;
+  avatarUrl?: string | null;
 }
 
 interface AuthState {
@@ -13,6 +14,7 @@ interface AuthState {
   token: string | null;
   setAuth: (user: User, token: string) => void;
   logout: () => void;
+  updateUser: (fields: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,6 +24,10 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       setAuth: (user, token) => set({ user, token }),
       logout: () => set({ user: null, token: null }),
+      updateUser: (fields) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...fields } : null,
+        })),
     }),
     {
       name: "auth-storage", // Lưu vào localStorage
