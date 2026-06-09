@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useState, useEffect } from "react";
 
 export interface User {
   id: string;
@@ -34,3 +35,25 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+export function useAuthHydration() {
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const checkHydration = () => {
+      setHydrated(useAuthStore.persist.hasHydrated());
+    };
+
+    const unsubHydrate = useAuthStore.persist.onHydrate(() => setHydrated(false));
+    const unsubFinish = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+
+    checkHydration();
+
+    return () => {
+      unsubHydrate();
+      unsubFinish();
+    };
+  }, []);
+
+  return hydrated;
+}

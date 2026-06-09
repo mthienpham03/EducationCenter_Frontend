@@ -1,27 +1,32 @@
 "use client";
 
-import { useAuthStore } from "@/store/auth.store";
+import { useAuthStore, useAuthHydration } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function StudentGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
+  const hydrated = useAuthHydration();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    if (!hydrated) return;
+
     if (!user || user.role?.toLowerCase() !== "student") {
       router.replace("/login");
+    } else {
+      setIsAuthorized(true);
     }
-  }, [user, router]);
+  }, [hydrated, user, router]);
 
-  // Avoid hydration errors
-  if (!mounted) return null;
-
-  // If user is not student, render nothing while redirecting
-  if (!user || user.role?.toLowerCase() !== "student") {
-    return null;
+  if (!hydrated || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 font-body-md text-sm">Đang xác thực thông tin...</p>
+      </div>
+    );
   }
 
   return <>{children}</>;
