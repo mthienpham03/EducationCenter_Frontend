@@ -1,1 +1,5 @@
-// Progress Reports
+import React from 'react';
+
+export default function Page() {
+  return <div className="p-8 text-center text-on-surface-variant font-body-md">Trang Báo cáo tiến độ (Admin) đang phát triển</div>;
+}
