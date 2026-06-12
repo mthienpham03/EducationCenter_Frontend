@@ -55,6 +55,32 @@ export const authService = {
     const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.UserProfile>>("/auth/verify");
     return response.data;
   },
+
+  /**
+   * Forgot password OTP request
+   */
+  forgotPassword: async (
+    data: ApiTypes.ForgotPasswordRequest
+  ): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(
+      "/auth/forgot-password",
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Reset password with OTP code
+   */
+  resetPassword: async (
+    data: ApiTypes.ResetPasswordRequest
+  ): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(
+      "/auth/reset-password",
+      data
+    );
+    return response.data;
+  },
 };
 
 // ============================================================================

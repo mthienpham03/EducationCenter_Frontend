@@ -22,6 +22,8 @@ export type {
   LoginRequest,
   LoginResponse,
   LogoutResponse,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
   // User
   UserProfile,
   UserRole,
