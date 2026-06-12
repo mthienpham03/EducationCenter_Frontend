@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { axiosClient } from "@/lib/api/axios";
 import Link from "next/link";
 import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
+import DeleteUserInfoModal from "@/components/ui/DeleteUserInfoModal";
 
 interface UserProfile {
   id: string;
@@ -45,6 +46,8 @@ export default function StudentManagement() {
   // Delete modal state
   const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Form states for Create Student
   const [createEmail, setCreateEmail] = useState("");
@@ -229,12 +232,26 @@ export default function StudentManagement() {
     }
   };
 
-  // Handle Delete Student - mở modal xác nhận
+  // Handle Delete Student - mở modal xác nhận bước 1
   const handleDeleteStudent = (user: UserProfile) => {
     setDeleteTarget(user);
+    setShowInfoModal(true);
   };
 
-  // Xác nhận xóa sau khi modal confirm
+  // Tiến hành sang bước 2
+  const handleProceedToDeleteConfirm = () => {
+    setShowInfoModal(false);
+    setShowConfirmModal(true);
+  };
+
+  // Hủy tiến trình xóa ở bất kỳ bước nào
+  const handleCancelDelete = () => {
+    setDeleteTarget(null);
+    setShowInfoModal(false);
+    setShowConfirmModal(false);
+  };
+
+  // Xác nhận xóa sau khi modal confirm (bước 2)
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
@@ -245,12 +262,14 @@ export default function StudentManagement() {
       if (response.data && response.data.success) {
         setSuccessMsg(response.data.message || `Đã xóa tài khoản học viên ${deleteTarget.fullName} thành công.`);
         setDeleteTarget(null);
+        setShowConfirmModal(false);
         fetchStudents();
       }
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản học viên.");
       setDeleteTarget(null);
+      setShowConfirmModal(false);
     } finally {
       setIsDeleting(false);
     }
@@ -760,16 +779,30 @@ export default function StudentManagement() {
         </div>
       )}
 
-      {/* DELETE CONFIRM MODAL */}
-      {deleteTarget && (
+      {/* DELETE INFO MODAL (BƯỚC 1) */}
+      {deleteTarget && showInfoModal && (
+        <DeleteUserInfoModal
+          user={{
+            id: deleteTarget.id,
+            fullName: deleteTarget.fullName,
+            email: deleteTarget.email,
+            status: deleteTarget.status,
+            role: "student",
+            extraInfo: deleteTarget.studentProfile?.studentCode || "Chưa cập nhật",
+          }}
+          onProceed={handleProceedToDeleteConfirm}
+          onCancel={handleCancelDelete}
+        />
+      )}
+
+      {/* DELETE CONFIRM MODAL (BƯỚC 2) */}
+      {deleteTarget && showConfirmModal && (
         <DeleteConfirmModal
           targetName={deleteTarget.fullName}
           targetType="học viên"
           isDeleting={isDeleting}
           onConfirm={handleConfirmDelete}
-          onCancel={() => {
-            if (!isDeleting) setDeleteTarget(null);
-          }}
+          onCancel={handleCancelDelete}
         />
       )}
     </div>
