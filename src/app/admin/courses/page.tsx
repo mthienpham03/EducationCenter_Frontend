@@ -35,6 +35,8 @@ export default function AdminCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "all">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 5;
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -50,6 +52,7 @@ export default function AdminCoursesPage() {
         status: statusFilter !== "all" ? statusFilter : undefined,
       });
       setCourses(res.data || []);
+      setCurrentPage(1); // reset về trang đầu khi filter/search thay đổi
     } catch {
       setCourses([]);
     } finally {
@@ -99,6 +102,12 @@ export default function AdminCoursesPage() {
     draft: courses.filter((c) => c.status === "draft").length,
     archived: courses.filter((c) => c.status === "archived").length,
   };
+
+  const totalPages = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
+  const paginatedCourses = courses.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <div className="space-y-stack-md">
@@ -222,7 +231,7 @@ export default function AdminCoursesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
-                {courses.map((course) => {
+                {paginatedCourses.map((course) => {
                   const pill = STATUS_PILL[course.status];
                   return (
                     <tr key={course.id} className="hover:bg-surface-container-lowest transition-colors group">
@@ -320,10 +329,57 @@ export default function AdminCoursesPage() {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer / Pagination */}
         {!loading && courses.length > 0 && (
-          <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/20">
-            <p className="text-sm text-on-surface-variant">Hiển thị {courses.length} khóa học</p>
+          <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-on-surface-variant">
+              Hiển thị <span className="font-bold text-on-surface">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, courses.length)}</span> trong tổng số <span className="font-bold text-on-surface">{courses.length}</span> khóa học
+            </p>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                {/* Previous */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Trang trước"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  const isNear = Math.abs(page - currentPage) <= 1 || page === 1 || page === totalPages;
+                  const isDot  = !isNear && (page === currentPage - 2 || page === currentPage + 2);
+                  if (!isNear && !isDot) return null;
+                  if (isDot) return <span key={page} className="w-8 text-center text-on-surface-variant text-sm">…</span>;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all ${
+                        page === currentPage
+                          ? "bg-primary text-white shadow-sm shadow-primary/30"
+                          : "border border-outline-variant/50 text-on-surface-variant hover:bg-primary-fixed hover:text-primary"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                {/* Next */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Trang tiếp"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
