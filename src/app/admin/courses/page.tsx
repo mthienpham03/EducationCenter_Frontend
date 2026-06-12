@@ -4,7 +4,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import { courseService } from "@/lib/api";
 import type { Course, CourseStatus } from "@/lib/types/api.types";
 import CourseFormModal from "@/components/courses/CourseFormModal";
-import ClassManagementPanel from "@/components/courses/ClassManagementPanel";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -36,7 +38,7 @@ export default function AdminCoursesPage() {
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [managingCourse, setManagingCourse] = useState<Course | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -60,6 +62,8 @@ export default function AdminCoursesPage() {
     return () => clearTimeout(timer);
   }, [fetchCourses]);
 
+  const router = useRouter();
+
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(null), 3000);
@@ -70,13 +74,18 @@ export default function AdminCoursesPage() {
     setShowFormModal(true);
   };
 
-  const handleDelete = async (course: Course) => {
-    if (!confirm(`Xóa khóa học "${course.name}"? Hành động này không thể hoàn tác.`)) return;
-    setDeletingId(course.id);
+  const handleDeleteClick = (course: Course) => {
+    setCourseToDelete(course);
+  };
+
+  const confirmDelete = async () => {
+    if (!courseToDelete) return;
+    setDeletingId(courseToDelete.id);
     try {
-      await courseService.deleteCourse(course.id);
-      showSuccess(`Đã xóa khóa học "${course.name}"`);
+      await courseService.deleteCourse(courseToDelete.id);
+      showSuccess(`Đã xóa khóa học "${courseToDelete.name}"`);
       await fetchCourses();
+      setCourseToDelete(null);
     } catch (err: any) {
       alert(err?.response?.data?.message || "Không thể xóa khóa học");
     } finally {
@@ -270,13 +279,13 @@ export default function AdminCoursesPage() {
 
                       {/* Class management */}
                       <td className="px-6 py-4">
-                        <button
-                          onClick={() => setManagingCourse(course)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
+                        <Link
+                          href={`/admin/courses/${course.id}/classes`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
                         >
                           <span className="material-symbols-outlined text-[14px]">meeting_room</span>
                           Quản lý lớp
-                        </button>
+                        </Link>
                       </td>
 
                       {/* Actions */}
@@ -290,7 +299,7 @@ export default function AdminCoursesPage() {
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
-                            onClick={() => handleDelete(course)}
+                            onClick={() => handleDeleteClick(course)}
                             disabled={deletingId === course.id}
                             className="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors disabled:opacity-50"
                             title="Xóa"
@@ -327,12 +336,20 @@ export default function AdminCoursesPage() {
         editingCourse={editingCourse}
       />
 
-      {managingCourse && (
-        <ClassManagementPanel
-          course={managingCourse}
-          onClose={() => setManagingCourse(null)}
-        />
-      )}
+      <ConfirmDialog
+        isOpen={!!courseToDelete}
+        title="Xác nhận xóa khóa học"
+        message={
+          <>
+            Bạn có chắc chắn muốn xóa khóa học <span className="font-bold text-on-surface">{courseToDelete?.name}</span> không? Hành động này không thể hoàn tác.
+          </>
+        }
+        confirmText="Xóa khóa học"
+        cancelText="Hủy"
+        onConfirm={confirmDelete}
+        onCancel={() => setCourseToDelete(null)}
+        isLoading={!!deletingId}
+      />
     </div>
   );
 }

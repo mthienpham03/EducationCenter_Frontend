@@ -574,9 +574,10 @@ export default function LecturerManagement() {
         </div>
       </div>
 
+      {/* CREATE LECTURER MODAL */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
               <h3 className="text-headline-md font-bold text-on-surface">Thêm giảng viên mới</h3>
               <button onClick={() => setIsCreateOpen(false)} className="text-outline hover:text-on-surface">
@@ -706,9 +707,10 @@ export default function LecturerManagement() {
         </div>
       )}
 
+      {/* LOCK TUTOR MODAL */}
       {isLockOpen && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
               <h3 className="text-headline-md font-bold text-on-surface">Khóa giảng viên</h3>
               <button onClick={() => setIsLockOpen(false)} className="text-outline hover:text-on-surface">
