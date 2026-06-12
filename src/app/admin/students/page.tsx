@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { axiosClient } from "@/lib/api/axios";
 import Link from "next/link";
+import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 
 interface UserProfile {
   id: string;
@@ -40,6 +41,10 @@ export default function StudentManagement() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isLockOpen, setIsLockOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+
+  // Delete modal state
+  const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form states for Create Student
   const [createEmail, setCreateEmail] = useState("");
@@ -224,20 +229,30 @@ export default function StudentManagement() {
     }
   };
 
-  // Handle Delete Student
-  const handleDeleteStudent = async (user: UserProfile) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của học viên ${user.fullName}? (Dữ liệu sẽ bị lưu trữ tạm thời)`)) return;
+  // Handle Delete Student - mở modal xác nhận
+  const handleDeleteStudent = (user: UserProfile) => {
+    setDeleteTarget(user);
+  };
+
+  // Xác nhận xóa sau khi modal confirm
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const response = await axiosClient.delete(`/users/${user.id}`);
+      const response = await axiosClient.delete(`/users/${deleteTarget.id}`);
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || "Xóa tài khoản học viên thành công.");
+        setSuccessMsg(response.data.message || `Đã xóa tài khoản học viên ${deleteTarget.fullName} thành công.`);
+        setDeleteTarget(null);
         fetchStudents();
       }
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản học viên.");
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -743,6 +758,19 @@ export default function StudentManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* DELETE CONFIRM MODAL */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          targetName={deleteTarget.fullName}
+          targetType="học viên"
+          isDeleting={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            if (!isDeleting) setDeleteTarget(null);
+          }}
+        />
       )}
     </div>
   );

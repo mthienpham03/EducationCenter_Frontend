@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { axiosClient } from "@/lib/api/axios";
 import { specializationApi, Specialization } from "@/lib/api/specialization.api";
 import SpecializationSelector from "@/components/admin/SpecializationSelector";
+import DeleteConfirmModal from "@/components/ui/DeleteConfirmModal";
 
 interface UserProfile {
   id: string;
@@ -42,6 +43,10 @@ export default function LecturerManagement() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isLockOpen, setIsLockOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+
+  // Delete modal state
+  const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form states for Create Lecturer
   const [createEmail, setCreateEmail] = useState("");
@@ -260,20 +265,30 @@ export default function LecturerManagement() {
     }
   };
 
-  // Handle Delete Lecturer
-  const handleDeleteLecturer = async (user: UserProfile) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của GV. ${user.fullName}? (Dữ liệu sẽ bị lưu trữ tạm thời)`)) return;
+  // Handle Delete Lecturer - mở modal xác nhận
+  const handleDeleteLecturer = (user: UserProfile) => {
+    setDeleteTarget(user);
+  };
+
+  // Xác nhận xóa sau khi modal confirm
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const response = await axiosClient.delete(`/users/${user.id}`);
+      const response = await axiosClient.delete(`/users/${deleteTarget.id}`);
       if (response.data && response.data.success) {
-        setSuccessMsg(response.data.message || "Xóa tài khoản giảng viên thành công.");
+        setSuccessMsg(response.data.message || `Đã xóa tài khoản giảng viên ${deleteTarget.fullName} thành công.`);
+        setDeleteTarget(null);
         fetchTutors();
       }
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản giảng viên.");
+      setDeleteTarget(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -815,6 +830,19 @@ export default function LecturerManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* DELETE CONFIRM MODAL */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          targetName={deleteTarget.fullName}
+          targetType="giảng viên"
+          isDeleting={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            if (!isDeleting) setDeleteTarget(null);
+          }}
+        />
       )}
     </div>
   );
