@@ -1,368 +1,600 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usersApi } from "@/lib/api/users.api";
-import { Search, UserPlus, ShieldAlert, Trash2, Edit3, CheckCircle, XCircle, UserCheck } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { axiosClient } from "@/lib/api/axios";
 
-interface User {
+interface UserProfile {
   id: string;
   email: string;
   fullName: string;
   phone: string | null;
-  role: string;
-  status: string;
+  role: "admin" | "lecturer" | "student";
+  status: "active" | "inactive" | "locked" | "pending";
   createdAt: string;
   lastLoginAt: string | null;
+  lockedUntil: string | null;
+  lockReason: string | null;
+  lecturerProfile?: {
+    specialization?: string | null;
+    experienceYears?: number | null;
+  } | null;
+  studentProfile?: {
+    studentCode?: string | null;
+    address?: string | null;
+  } | null;
 }
 
-export default function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>([]);
+export default function UserManagement() {
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  
-  // Modal states
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createRole, setCreateRole] = useState<"lecturer" | "student">("student");
-  const [formData, setFormData] = useState({
-    email: "",
-    fullName: "",
-    phone: "",
-    specialization: "",
-    experienceYears: 0,
-    studentCode: "",
-    dateOfBirth: "",
-    address: "",
-  });
-
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Pagination (5 items per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
+  // Modals state
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isLockOpen, setIsLockOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+
+  // Form states for Create User
+  const [createRole, setCreateRole] = useState<"lecturer" | "student">("student");
+  const [createEmail, setCreateEmail] = useState("");
+  const [createFullName, setCreateFullName] = useState("");
+  const [createPhone, setCreatePhone] = useState("");
+  const [studentCode, setStudentCode] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [address, setAddress] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [experienceYears, setExperienceYears] = useState("");
+
+  // Form states for Lock User
+  const [lockReason, setLockReason] = useState("");
+  const [lockType, setLockType] = useState<"permanent" | "temporary">("permanent");
+  const [lockDurationDays, setLockDurationDays] = useState("1");
+  const [customLockDate, setCustomLockDate] = useState("");
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   const fetchUsers = async () => {
-    setLoading(true);
     try {
-      const response = await usersApi.getUsers(search, roleFilter, statusFilter);
-      if (response.success) {
-        setUsers(response.data);
+      setLoading(true);
+      setErrorMsg("");
+      const response = await axiosClient.get("/users");
+      if (response.data && response.data.success) {
+        setUsers(response.data.data || []);
+      } else {
+        setErrorMsg("Không thể lấy danh sách người dùng.");
       }
-    } catch (error) {
-      console.error("Lỗi khi tải danh sách người dùng:", error);
+    } catch (err: any) {
+      console.error("Fetch users error:", err);
+      setErrorMsg(err.response?.data?.message || "Có lỗi xảy ra khi tải dữ liệu.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, [search, roleFilter, statusFilter]);
+  // Filter logic
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.phone && u.phone.includes(searchQuery));
 
-  const handleStatusChange = async (userId: string, currentStatus: string) => {
-    const newStatus = currentStatus === "active" ? "locked" : "active";
-    try {
-      const response = await usersApi.updateUserStatus(userId, newStatus);
-      if (response.success) {
-        setSuccessMsg("Cập nhật trạng thái tài khoản thành công!");
-        fetchUsers();
-        setTimeout(() => setSuccessMsg(""), 3000);
-      }
-    } catch (error: any) {
-      console.error(error);
-      setErrorMsg("Không thể cập nhật trạng thái tài khoản.");
-      setTimeout(() => setErrorMsg(""), 3000);
+    const matchesRole =
+      roleFilter === "all" ||
+      (roleFilter === "admin" && u.role === "admin") ||
+      (roleFilter === "lecturer" && u.role === "lecturer") ||
+      (roleFilter === "student" && u.role === "student");
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && u.status === "active") ||
+      (statusFilter === "locked" && u.status === "locked") ||
+      (statusFilter === "pending" && u.status === "pending") ||
+      (statusFilter === "inactive" && u.status === "inactive");
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  // Dynamic statistics
+  const totalUsers = users.length;
+  const activeCount = users.filter((u) => u.status === "active").length;
+  const lockedCount = users.filter((u) => u.status === "locked").length;
+  const pendingCount = users.filter((u) => u.status === "pending").length;
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    (currentPage - 1) * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) return;
-    try {
-      const response = await usersApi.deleteUser(userId);
-      if (response.success) {
-        setSuccessMsg("Xóa tài khoản thành công!");
-        fetchUsers();
-        setTimeout(() => setSuccessMsg(""), 3000);
-      }
-    } catch (error: any) {
-      console.error(error);
-      setErrorMsg("Không thể xóa tài khoản người dùng.");
-      setTimeout(() => setErrorMsg(""), 3000);
-    }
+  // Reset pagination on filter change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
   };
 
+  const handleRoleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRoleFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // Handle Create User Submit
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
-
     try {
       let response;
-      if (createRole === "lecturer") {
-        response = await usersApi.createLecturer({
-          email: formData.email,
-          fullName: formData.fullName,
-          phone: formData.phone || undefined,
-          specialization: formData.specialization || undefined,
-          experienceYears: formData.experienceYears ? Number(formData.experienceYears) : undefined,
+      if (createRole === "student") {
+        response = await axiosClient.post("/users/students", {
+          email: createEmail,
+          fullName: createFullName,
+          phone: createPhone || undefined,
+          studentCode,
+          dateOfBirth: dateOfBirth || undefined,
+          address: address || undefined,
         });
       } else {
-        response = await usersApi.createStudent({
-          email: formData.email,
-          fullName: formData.fullName,
-          phone: formData.phone || undefined,
-          studentCode: formData.studentCode,
-          dateOfBirth: formData.dateOfBirth || undefined,
-          address: formData.address || undefined,
+        response = await axiosClient.post("/users/lecturers", {
+          email: createEmail,
+          fullName: createFullName,
+          phone: createPhone || undefined,
+          specialization: specialization || undefined,
+          experienceYears: experienceYears ? parseInt(experienceYears) : undefined,
         });
       }
 
-      if (response.success) {
-        setSuccessMsg(
-          `Tạo tài khoản ${createRole === "lecturer" ? "Giảng viên" : "Học viên"} thành công!`
-        );
+      if (response.data && response.data.success) {
+        setSuccessMsg(response.data.message || "Tạo tài khoản thành công!");
         setIsCreateOpen(false);
+        // Clear inputs
+        setCreateEmail("");
+        setCreateFullName("");
+        setCreatePhone("");
+        setStudentCode("");
+        setDateOfBirth("");
+        setAddress("");
+        setSpecialization("");
+        setExperienceYears("");
         fetchUsers();
-        setFormData({
-          email: "",
-          fullName: "",
-          phone: "",
-          specialization: "",
-          experienceYears: 0,
-          studentCode: "",
-          dateOfBirth: "",
-          address: "",
-        });
-        setTimeout(() => setSuccessMsg(""), 3000);
       }
-    } catch (error: any) {
-      if (error.response?.data?.message) {
-        setErrorMsg(error.response.data.message);
-      } else {
-        setErrorMsg("Có lỗi xảy ra khi tạo tài khoản.");
-      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.message || "Lỗi khi tạo tài khoản mới.");
     }
   };
 
-  // Metrics
-  const totalUsers = users.length;
-  const activeUsers = users.filter((u) => u.status === "active").length;
-  const lockedUsers = users.filter((u) => u.status === "locked").length;
+  // Open Lock Modal
+  const handleOpenLock = (user: UserProfile) => {
+    setSelectedUser(user);
+    setLockReason("");
+    setLockType("permanent");
+    setLockDurationDays("1");
+    setCustomLockDate("");
+    setIsLockOpen(true);
+  };
+
+  // Handle Lock User Submit
+  const handleLockUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    let lockedUntil: string | null = null;
+    if (lockType === "temporary") {
+      if (customLockDate) {
+        lockedUntil = new Date(customLockDate).toISOString();
+      } else {
+        const days = parseInt(lockDurationDays) || 1;
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + days);
+        lockedUntil = targetDate.toISOString();
+      }
+    }
+
+    try {
+      const response = await axiosClient.post(`/users/${selectedUser.id}/lock`, {
+        reason: lockReason,
+        lockedUntil,
+      });
+
+      if (response.data && response.data.success) {
+        setSuccessMsg(response.data.message || `Đã khóa tài khoản ${selectedUser.fullName}.`);
+        setIsLockOpen(false);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.message || "Lỗi khi thực hiện khóa tài khoản.");
+    }
+  };
+
+  // Handle Unlock User
+  const handleUnlockUser = async (user: UserProfile) => {
+    if (!confirm(`Bạn có chắc chắn muốn mở khóa tài khoản của ${user.fullName}?`)) return;
+    setErrorMsg("");
+    setSuccessMsg("");
+    try {
+      const response = await axiosClient.post(`/users/${user.id}/unlock`);
+      if (response.data && response.data.success) {
+        setSuccessMsg(response.data.message || `Đã mở khóa tài khoản ${user.fullName}.`);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.message || "Lỗi khi mở khóa tài khoản.");
+    }
+  };
+
+  // Handle Delete User
+  const handleDeleteUser = async (user: UserProfile) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản của ${user.fullName}? (Dữ liệu sẽ bị lưu trữ tạm thời)`)) return;
+    setErrorMsg("");
+    setSuccessMsg("");
+    try {
+      const response = await axiosClient.delete(`/users/${user.id}`);
+      if (response.data && response.data.success) {
+        setSuccessMsg(response.data.message || "Xóa tài khoản thành công.");
+        fetchUsers();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.message || "Lỗi khi xóa tài khoản.");
+    }
+  };
 
   return (
-    <div className="py-8">
-      <div className="mx-auto max-w-7xl px-4">
-        {/* Header */}
-        <header className="mb-8 rounded-4xl bg-white/90 p-8 shadow-xl shadow-slate-200/40 backdrop-blur-sm flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#0288d1]">Quản trị</p>
-            <h1 className="mt-2 text-4xl font-bold text-slate-950">Quản lý người dùng</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Quản lý tài khoản Admin, Giảng viên và Học viên trong hệ thống Giáo dục.
-            </p>
+    <div className="flex flex-col gap-stack-lg w-full">
+      {/* Alert Notifications */}
+      {successMsg && (
+        <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 p-4 rounded-lg flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+            <span className="text-body-md font-medium">{successMsg}</span>
           </div>
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="flex items-center gap-2 rounded-2xl bg-[#87CEFA] px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#6ec5f2] transition-colors"
-          >
-            <UserPlus size={18} /> Thêm tài khoản mới
+          <button onClick={() => setSuccessMsg("")} className="text-emerald-500 hover:text-emerald-700">
+            <span className="material-symbols-outlined text-lg">close</span>
           </button>
-        </header>
+        </div>
+      )}
 
-        {/* System Message */}
-        {successMsg && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-2xl text-center font-medium">
-            {successMsg}
+      {errorMsg && (
+        <div className="bg-rose-50 text-rose-800 border border-rose-200 p-4 rounded-lg flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-rose-600">error</span>
+            <span className="text-body-md font-medium">{errorMsg}</span>
           </div>
-        )}
-        {errorMsg && (
-          <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl text-center font-medium">
-            {errorMsg}
-          </div>
-        )}
+          <button onClick={() => setErrorMsg("")} className="text-rose-500 hover:text-rose-700">
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      )}
 
-        {/* Metrics Row */}
-        <section className="grid gap-4 md:grid-cols-3 mb-8">
-          <div className="rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-            <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">Tổng tài khoản</p>
-            <p className="mt-4 text-4xl font-bold text-slate-950">{totalUsers}</p>
-          </div>
-          <div className="rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-            <p className="text-sm font-medium uppercase tracking-[0.18em] text-emerald-600">Đang hoạt động</p>
-            <p className="mt-4 text-4xl font-bold text-emerald-700">{activeUsers}</p>
-          </div>
-          <div className="rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-            <p className="text-sm font-medium uppercase tracking-[0.18em] text-rose-600">Đang bị khóa</p>
-            <p className="mt-4 text-4xl font-bold text-rose-700">{lockedUsers}</p>
-          </div>
-        </section>
+      {/* Header and Add button */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="font-headline-lg text-headline-lg text-on-surface">Quản lý tài khoản</h2>
+          <p className="text-on-surface-variant font-body-md">Danh sách và phân quyền người dùng trong hệ thống EduCenter.</p>
+        </div>
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all self-start md:self-auto"
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
+          Thêm tài khoản mới
+        </button>
+      </div>
 
-        {/* Filter controls */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm shadow-slate-200/50 mb-8 flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-3.5 text-slate-400" size={18} />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-[0px_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-5 group hover:border-primary/20 transition-all">
+          <div className="w-14 h-14 bg-primary-fixed rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
+          </div>
+          <div>
+            <p className="text-label-md text-on-surface-variant">Tổng người dùng</p>
+            <h3 className="text-headline-md font-bold text-on-surface">{totalUsers}</h3>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-[0px_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-5 group hover:border-primary/20 transition-all">
+          <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          </div>
+          <div>
+            <p className="text-label-md text-on-surface-variant">Hoạt động</p>
+            <h3 className="text-headline-md font-bold text-on-surface">{activeCount}</h3>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-[0px_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-5 group hover:border-primary/20 transition-all">
+          <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>block</span>
+          </div>
+          <div>
+            <p className="text-label-md text-on-surface-variant">Đang khóa</p>
+            <h3 className="text-headline-md font-bold text-on-surface">{lockedCount}</h3>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-outline-variant/30 shadow-[0px_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-5 group hover:border-primary/20 transition-all">
+          <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>pending</span>
+          </div>
+          <div>
+            <p className="text-label-md text-on-surface-variant">Chờ duyệt</p>
+            <h3 className="text-headline-md font-bold text-on-surface">{pendingCount}</h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Table Card */}
+      <div className="bg-white rounded-xl border border-outline-variant/30 shadow-[0px_4px_20px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col">
+        {/* Filters */}
+        <div className="p-6 border-b border-outline-variant/30 flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full lg:w-96">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline">search</span>
             <input
               type="text"
-              placeholder="Tìm kiếm theo Tên, Email hoặc SĐT..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] transition-all text-sm"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-10 pr-4 py-2.5 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md font-body-md"
+              placeholder="Tìm theo tên, email, SĐT..."
             />
           </div>
 
-          <div className="flex gap-4 w-full md:w-auto">
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="flex-1 md:flex-none border border-slate-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 text-sm bg-white"
-            >
-              <option value="">Tất cả Vai trò</option>
-              <option value="admin">Admin</option>
-              <option value="lecturer">Giảng viên</option>
-              <option value="student">Học viên</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            {/* Role Filter */}
+            <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface hover:bg-surface-container transition-colors cursor-pointer group">
+              <span className="material-symbols-outlined text-outline group-hover:text-primary transition-colors">filter_list</span>
+              <select
+                value={roleFilter}
+                onChange={handleRoleFilterChange}
+                className="bg-transparent border-none focus:ring-0 text-label-md font-label-md p-0 pr-6 text-on-surface cursor-pointer focus:outline-none"
+              >
+                <option value="all">Vai trò: Tất cả</option>
+                <option value="admin">Admin</option>
+                <option value="lecturer">Giảng viên</option>
+                <option value="student">Học viên</option>
+              </select>
+            </div>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 md:flex-none border border-slate-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 text-sm bg-white"
+            {/* Status Filter */}
+            <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface hover:bg-surface-container transition-colors cursor-pointer group">
+              <span className="material-symbols-outlined text-outline group-hover:text-primary transition-colors">verified_user</span>
+              <select
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                className="bg-transparent border-none focus:ring-0 text-label-md font-label-md p-0 pr-6 text-on-surface cursor-pointer focus:outline-none"
+              >
+                <option value="all">Trạng thái: Tất cả</option>
+                <option value="active">Hoạt động</option>
+                <option value="locked">Đang khóa</option>
+                <option value="pending">Chờ duyệt</option>
+                <option value="inactive">Không hoạt động</option>
+              </select>
+            </div>
+
+            <button
+              onClick={fetchUsers}
+              className="flex items-center gap-2 text-primary font-bold px-3 py-2 hover:bg-primary/5 rounded-lg transition-all"
             >
-              <option value="">Tất cả Trạng thái</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="locked">Bị khóa</option>
-              <option value="pending">Chờ kích hoạt</option>
-            </select>
+              <span className="material-symbols-outlined">refresh</span>
+              Làm mới
+            </button>
           </div>
-        </section>
+        </div>
 
-        {/* Users Table */}
-        <section className="bg-white rounded-4xl shadow-md overflow-hidden border border-slate-100">
+        {/* Table List */}
+        <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-12 text-center text-slate-500 font-medium">
-              <div className="w-10 h-10 border-4 border-[#87CEFA]/30 border-t-[#87CEFA] rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="p-12 text-center text-on-surface-variant font-medium">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               Đang tải danh sách người dùng...
             </div>
-          ) : users.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 font-medium">
-              Không tìm thấy tài khoản người dùng nào.
+          ) : paginatedUsers.length === 0 ? (
+            <div className="p-12 text-center text-on-surface-variant font-medium">
+              Không tìm thấy người dùng nào phù hợp.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs font-semibold uppercase tracking-wider">
-                    <th className="p-5">Họ và Tên / Email</th>
-                    <th className="p-5">Số điện thoại</th>
-                    <th className="p-5">Vai trò</th>
-                    <th className="p-5">Trạng thái</th>
-                    <th className="p-5">Ngày tạo</th>
-                    <th className="p-5 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-5">
-                        <div className="font-semibold text-slate-900">{user.fullName}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{user.email}</div>
-                      </td>
-                      <td className="p-5 text-slate-600">{user.phone || "—"}</td>
-                      <td className="p-5">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                            user.role === "admin"
-                              ? "bg-rose-100 text-rose-700"
-                              : user.role === "lecturer"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-purple-100 text-purple-700"
-                          }`}
-                        >
-                          {user.role === "admin"
-                            ? "Admin"
-                            : user.role === "lecturer"
-                            ? "Giảng viên"
-                            : "Học viên"}
-                        </span>
-                      </td>
-                      <td className="p-5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
-                            user.status === "active"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-rose-100 text-rose-800"
-                          }`}
-                        >
-                          {user.status === "active" ? (
-                            <>
-                              <CheckCircle size={12} /> Hoạt động
-                            </>
-                          ) : (
-                            <>
-                              <XCircle size={12} /> Bị khóa
-                            </>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-low/50">
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Họ và Tên</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Vai trò</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Số điện thoại</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Ngày tạo</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Trạng thái</th>
+                  <th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/30">
+                {paginatedUsers.map((u) => (
+                  <tr key={u.id} className={`hover:bg-surface-bright transition-colors group ${u.status === "locked" ? "bg-rose-50/20" : ""}`}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold text-lg overflow-hidden">
+                          {u.fullName.split(" ").pop()?.charAt(0).toUpperCase() || "U"}
+                        </div>
+                        <div>
+                          <p className="font-bold text-on-surface">{u.fullName}</p>
+                          <p className="text-caption text-on-surface-variant">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {u.role === "admin" && (
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[12px] font-bold">Admin</span>
+                      )}
+                      {u.role === "lecturer" && (
+                        <span className="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-100 rounded-full text-[12px] font-bold">Giảng viên</span>
+                      )}
+                      {u.role === "student" && (
+                        <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[12px] font-bold">Học viên</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-body-md text-on-surface-variant">
+                      {u.phone || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-body-md text-on-surface-variant">
+                      {new Date(u.createdAt).toLocaleDateString("vi-VN")}
+                    </td>
+                    <td className="px-6 py-4">
+                      {u.status === "active" && (
+                        <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-label-md">
+                          <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                          Hoạt động
+                        </div>
+                      )}
+                      {u.status === "locked" && (
+                        <div className="flex flex-col text-rose-600 font-bold text-label-md">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                            Đang khóa
+                          </div>
+                          {u.lockReason && (
+                            <span className="text-[10px] text-rose-500 font-normal mt-0.5 max-w-[150px] truncate" title={u.lockReason}>
+                              Lý do: {u.lockReason}
+                            </span>
                           )}
-                        </span>
-                      </td>
-                      <td className="p-5 text-slate-500 text-xs">
-                        {new Date(user.createdAt).toLocaleDateString("vi-VN")}
-                      </td>
-                      <td className="p-5 text-right space-x-2">
-                        {user.role !== "admin" && (
-                          <>
+                        </div>
+                      )}
+                      {u.status === "pending" && (
+                        <div className="flex items-center gap-1.5 text-amber-500 font-bold text-label-md">
+                          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                          Chờ duyệt
+                        </div>
+                      )}
+                      {u.status === "inactive" && (
+                        <div className="flex items-center gap-1.5 text-slate-500 font-bold text-label-md">
+                          <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                          Không hoạt động
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {u.role !== "admin" && (
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {u.status === "locked" ? (
                             <button
-                              onClick={() => handleStatusChange(user.id, user.status)}
-                              title={user.status === "active" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                              className={`p-2 rounded-xl border transition-colors inline-flex items-center ${
-                                user.status === "active"
-                                  ? "border-rose-100 hover:bg-rose-50 text-rose-600"
-                                  : "border-emerald-100 hover:bg-emerald-50 text-emerald-600"
-                              }`}
+                              onClick={() => handleUnlockUser(u)}
+                              className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-all"
+                              title="Mở khóa tài khoản"
                             >
-                              {user.status === "active" ? <XCircle size={16} /> : <UserCheck size={16} />}
+                              <span className="material-symbols-outlined text-xl">lock_open</span>
                             </button>
+                          ) : (
                             <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              title="Xóa người dùng"
-                              className="p-2 rounded-xl border border-red-100 hover:bg-red-50 text-red-600 transition-colors inline-flex items-center"
+                              onClick={() => handleOpenLock(u)}
+                              className="p-2 hover:bg-rose-50 rounded-lg text-rose-600 transition-all"
+                              title="Khóa tài khoản"
                             >
-                              <Trash2 size={16} />
+                              <span className="material-symbols-outlined text-xl">block</span>
                             </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          )}
+                          <button
+                            onClick={() => handleDeleteUser(u)}
+                            className="p-2 hover:bg-rose-100 rounded-lg text-rose-600 transition-all"
+                            title="Xóa tài khoản"
+                          >
+                            <span className="material-symbols-outlined text-xl">delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
-        </section>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="p-6 border-t border-outline-variant/30 flex items-center justify-between">
+          <p className="text-caption text-on-surface-variant">
+            Hiển thị {filteredUsers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} trong tổng số {filteredUsers.length} tài khoản
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold border transition-all ${
+                  currentPage === page
+                    ? "bg-primary text-white border-primary"
+                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Create User Modal */}
+      {/* CREATE USER MODAL */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col my-8">
-            <header className="bg-slate-50 p-6 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-950">Tạo tài khoản mới</h2>
-              <button
-                onClick={() => setIsCreateOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-semibold"
-              >
-                ✕
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
+            <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
+              <h3 className="text-headline-md font-bold text-on-surface">Tạo tài khoản mới</h3>
+              <button onClick={() => setIsCreateOpen(false)} className="text-outline hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
               </button>
-            </header>
+            </div>
 
-            <form onSubmit={handleCreateUser} className="p-6 space-y-4 overflow-y-auto flex-1 max-h-[70vh]">
-              {/* Select Role */}
-              <div className="space-y-1">
-                <label className="block text-sm font-semibold text-slate-700">Vai trò</label>
-                <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Vai trò</label>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setCreateRole("student")}
-                    className={`py-3 rounded-2xl border text-center font-bold text-sm transition-all ${
+                    className={`py-2 px-4 rounded-lg font-bold text-sm border transition-all ${
                       createRole === "student"
-                        ? "border-[#87CEFA] bg-[#87CEFA]/10 text-[#0288d1]"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        ? "bg-primary text-white border-primary"
+                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
                     }`}
                   >
                     Học viên
@@ -370,10 +602,10 @@ export default function UserManagementPage() {
                   <button
                     type="button"
                     onClick={() => setCreateRole("lecturer")}
-                    className={`py-3 rounded-2xl border text-center font-bold text-sm transition-all ${
+                    className={`py-2 px-4 rounded-lg font-bold text-sm border transition-all ${
                       createRole === "lecturer"
-                        ? "border-[#87CEFA] bg-[#87CEFA]/10 text-[#0288d1]"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        ? "bg-primary text-white border-primary"
+                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
                     }`}
                   >
                     Giảng viên
@@ -381,122 +613,229 @@ export default function UserManagementPage() {
                 </div>
               </div>
 
-              {/* Common Fields */}
-              <div className="space-y-1">
-                <label className="block text-sm font-semibold text-slate-700">Họ và Tên</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="Nguyễn Văn A"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-sm font-semibold text-slate-700">Email đăng nhập</label>
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Email đăng nhập</label>
                 <input
                   type="email"
                   required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="email@domain.com"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
+                  value={createEmail}
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                  placeholder="name@educenter.edu.vn"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-sm font-semibold text-slate-700">Số điện thoại</label>
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Họ và Tên</label>
                 <input
                   type="text"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="09XXXXXXXX"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
+                  required
+                  value={createFullName}
+                  onChange={(e) => setCreateFullName(e.target.value)}
+                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                  placeholder="Nguyễn Văn A"
                 />
               </div>
 
-              {/* Student Specific Fields */}
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Số điện thoại</label>
+                <input
+                  type="text"
+                  value={createPhone}
+                  onChange={(e) => setCreatePhone(e.target.value)}
+                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                  placeholder="0912345678"
+                />
+              </div>
+
+              {/* Student specific fields */}
               {createRole === "student" && (
                 <>
-                  <div className="space-y-1">
-                    <label className="block text-sm font-semibold text-slate-700">Mã học viên (STU_code)</label>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Mã học viên (duy nhất)</label>
                     <input
                       type="text"
                       required
-                      value={formData.studentCode}
-                      onChange={(e) => setFormData({ ...formData, studentCode: e.target.value })}
-                      placeholder="STU002"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
+                      value={studentCode}
+                      onChange={(e) => setStudentCode(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                      placeholder="HV1001"
                     />
                   </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-sm font-semibold text-slate-700">Ngày sinh</label>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Ngày sinh</label>
                     <input
                       type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
                     />
                   </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-sm font-semibold text-slate-700">Địa chỉ</label>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Địa chỉ</label>
                     <input
                       type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
                       placeholder="Hà Nội, Việt Nam"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
                     />
                   </div>
                 </>
               )}
 
-              {/* Lecturer Specific Fields */}
+              {/* Lecturer specific fields */}
               {createRole === "lecturer" && (
                 <>
-                  <div className="space-y-1">
-                    <label className="block text-sm font-semibold text-slate-700">Chuyên ngành</label>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Chuyên ngành</label>
                     <input
                       type="text"
-                      value={formData.specialization}
-                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                      placeholder="Khoa học Máy tính"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
+                      value={specialization}
+                      onChange={(e) => setSpecialization(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                      placeholder="Lập trình Mobile, UI/UX..."
                     />
                   </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-sm font-semibold text-slate-700">Số năm kinh nghiệm</label>
+                  <div>
+                    <label className="block text-label-md font-bold text-on-surface mb-1">Số năm kinh nghiệm</label>
                     <input
                       type="number"
-                      value={formData.experienceYears}
-                      onChange={(e) => setFormData({ ...formData, experienceYears: Number(e.target.value) })}
                       min="0"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#87CEFA]/40 focus:border-[#87CEFA] text-sm bg-slate-50"
+                      value={experienceYears}
+                      onChange={(e) => setExperienceYears(e.target.value)}
+                      className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                      placeholder="3"
                     />
                   </div>
                 </>
               )}
 
-              <footer className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-4 border-t border-outline-variant/30">
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-5 py-2.5 border border-slate-200 rounded-2xl font-semibold text-slate-600 hover:bg-slate-50 text-sm transition-colors"
+                  className="px-4 py-2 border border-outline-variant rounded-lg font-bold hover:bg-surface-container text-on-surface-variant text-sm transition-all"
                 >
-                  Hủy bỏ
+                  Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#87CEFA] text-white rounded-2xl font-semibold hover:bg-[#6ec5f2] text-sm transition-colors shadow-md"
+                  className="px-4 py-2 bg-primary text-white rounded-lg font-bold hover:opacity-90 text-sm transition-all shadow-md shadow-primary/10"
                 >
-                  Tạo tài khoản
+                  Lưu thay đổi
                 </button>
-              </footer>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* LOCK USER MODAL */}
+      {isLockOpen && selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
+            <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
+              <h3 className="text-headline-md font-bold text-on-surface">Khóa tài khoản</h3>
+              <button onClick={() => setIsLockOpen(false)} className="text-outline hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <p className="text-body-md text-on-surface-variant">
+              Bạn đang thực hiện khóa tài khoản của <strong>{selectedUser.fullName}</strong> ({selectedUser.email}).
+            </p>
+
+            <form onSubmit={handleLockUser} className="space-y-4">
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Lý do khóa tài khoản *</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={lockReason}
+                  onChange={(e) => setLockReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
+                  placeholder="Nhập lý do chi tiết..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-1">Hình thức khóa</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLockType("permanent")}
+                    className={`py-2 px-4 rounded-lg font-bold text-sm border transition-all ${
+                      lockType === "permanent"
+                        ? "bg-rose-600 text-white border-rose-600"
+                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                    }`}
+                  >
+                    Vô thời hạn
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLockType("temporary")}
+                    className={`py-2 px-4 rounded-lg font-bold text-sm border transition-all ${
+                      lockType === "temporary"
+                        ? "bg-primary text-white border-primary"
+                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                    }`}
+                  >
+                    Có thời hạn
+                  </button>
+                </div>
+              </div>
+
+              {lockType === "temporary" && (
+                <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant mb-1">Chọn nhanh thời gian khóa</label>
+                    <select
+                      value={lockDurationDays}
+                      onChange={(e) => {
+                        setLockDurationDays(e.target.value);
+                        setCustomLockDate(""); // Clear custom input
+                      }}
+                      className="w-full px-3 py-1.5 border border-outline-variant rounded-lg text-sm bg-white"
+                    >
+                      <option value="1">1 Ngày (24 giờ)</option>
+                      <option value="7">7 Ngày (1 tuần)</option>
+                      <option value="30">30 Ngày (1 tháng)</option>
+                      <option value="custom">Chọn ngày giờ tùy chỉnh...</option>
+                    </select>
+                  </div>
+
+                  {lockDurationDays === "custom" && (
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant mb-1">Mốc thời gian mở khóa</label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={customLockDate}
+                        onChange={(e) => setCustomLockDate(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-outline-variant rounded-lg text-sm bg-white"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-outline-variant/30">
+                <button
+                  type="button"
+                  onClick={() => setIsLockOpen(false)}
+                  className="px-4 py-2 border border-outline-variant rounded-lg font-bold hover:bg-surface-container text-on-surface-variant text-sm transition-all"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 text-sm transition-all shadow-md shadow-rose-600/10"
+                >
+                  Xác nhận khóa
+                </button>
+              </div>
             </form>
           </div>
         </div>

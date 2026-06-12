@@ -89,11 +89,12 @@ export function LoginForm() {
         const user = response.data.user;
         setAuth(user, response.data.accessToken);
 
-        if (user.role === "admin") {
+        const role = user.role?.toLowerCase();
+        if (role === "admin") {
           router.push("/admin/dashboard");
-        } else if (user.role === "lecturer") {
-          router.push("/lecturer/dashboard");
-        } else if (user.role === "student") {
+        } else if (role === "lecturer") {
+          router.push("/lecturer/courses");
+        } else if (role === "student") {
           router.push("/student/dashboard");
         } else {
           router.push("/");

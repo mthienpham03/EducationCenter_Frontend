@@ -1,82 +1,75 @@
+"use client";
+
+import Link from "next/link";
+
 export default function LecturerDashboardPage() {
-  const metrics = [
-    { label: "Lớp học đang dạy", value: 3, accent: "#87CEFA" },
-    { label: "Tổng số học viên", value: 85, accent: "#0288d1" },
-    { label: "Bài kiểm tra đã tạo", value: 12, accent: "#4f7ccf" },
-    { label: "Tài liệu đã tải lên", value: 28, accent: "#3b82f6" },
-  ];
-
-  const upcomingClasses = [
-    { name: "Lập trình React nâng cao - Ca 1", time: "08:00 - 10:00 | Hôm nay" },
-    { name: "Lập trình Node.js cơ bản - Ca 2", time: "14:00 - 16:00 | Ngày mai" },
-    { name: "Chuyên đề Fullstack Web - Ca 1", time: "08:00 - 10:00 | 10/06" },
-  ];
-
   return (
-    <div className="py-10">
-      <div className="mx-auto max-w-7xl px-4">
-        {/* Header */}
-        <header className="mb-8 rounded-4xl bg-white/90 p-8 shadow-xl shadow-slate-200/40 backdrop-blur-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="p-stack-md max-w-container-max mx-auto space-y-stack-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">
+        <div>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">Bảng điều khiển</h1>
+          <p className="font-body-md text-on-surface-variant mt-1">
+            Chào mừng trở lại! Xem nhanh các số liệu thống kê giảng dạy của bạn hôm nay.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+        <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between h-48">
+          <div>
+            <span className="material-symbols-outlined text-3xl text-primary mb-2">schedule</span>
+            <h3 className="font-headline-md text-lg text-on-surface">Lịch dạy tiếp theo</h3>
+            <p className="text-body-md text-on-surface-variant mt-1">IELTS Mastery - Phòng 204</p>
+          </div>
+          <p className="text-caption font-semibold text-primary">Hôm nay, 18:30 - 20:30</p>
+        </div>
+
+        <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between h-48">
+          <div>
+            <span className="material-symbols-outlined text-3xl text-secondary mb-2">pending_actions</span>
+            <h3 className="font-headline-md text-lg text-on-surface">Bài tập cần chấm</h3>
+            <p className="text-body-md text-on-surface-variant mt-1">12 bài luận Writing Task 1 mới nộp</p>
+          </div>
+          <Link href="/lecturer/documents" className="text-caption font-semibold text-secondary hover:underline">
+            Chấm bài ngay &rarr;
+          </Link>
+        </div>
+
+        <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between h-48">
+          <div>
+            <span className="material-symbols-outlined text-3xl text-tertiary mb-2">campaign</span>
+            <h3 className="font-headline-md text-lg text-on-surface">Thông báo mới</h3>
+            <p className="text-body-md text-on-surface-variant mt-1">Họp chuyên môn cuối tháng 6</p>
+          </div>
+          <p className="text-caption font-semibold text-tertiary">Ngày 28 tháng 6</p>
+        </div>
+      </div>
+
+      <div className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+        <h3 className="font-headline-md text-lg text-on-surface mb-4">Hoạt động gần đây</h3>
+        <div className="space-y-4">
+          <div className="flex gap-4 items-start pb-4 border-b border-outline-variant/20">
+            <div className="w-2 h-2 rounded-full bg-primary mt-2"></div>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#0288d1]">Giảng viên Portal</p>
-              <h1 className="mt-3 text-4xl font-bold text-slate-950">Tổng quan công việc giảng dạy</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Theo dõi tiến trình bài học, quản lý danh sách học viên và tổ chức các bài kiểm tra đánh giá chất lượng.
-              </p>
-            </div>
-            <div className="inline-flex items-center gap-3 rounded-3xl bg-[#87CEFA] px-5 py-3 text-sm font-semibold text-white shadow-sm">
-              Ca dạy tiếp theo: <span className="rounded-full bg-white/20 px-3 py-1 text-[#0f172a]">08:00 - 10:00</span>
+              <p className="text-body-md text-on-surface">Cập nhật chương trình <strong>IELTS Mastery (Standard Edition)</strong></p>
+              <p className="text-caption text-on-surface-variant">2 giờ trước</p>
             </div>
           </div>
-        </header>
-
-        {/* Metrics */}
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {metrics.map((metric) => (
-            <div key={metric.label} className="rounded-3xl bg-white p-6 shadow-sm shadow-slate-200/50">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">{metric.label}</p>
-                <div className="h-3 w-16 rounded-full" style={{ backgroundColor: metric.accent }} />
-              </div>
-              <p className="mt-6 text-4xl font-semibold text-slate-950">{metric.value}</p>
-            </div>
-          ))}
-        </section>
-
-        {/* Detail Panel */}
-        <section className="mt-8 grid gap-6 xl:grid-cols-2">
-          {/* Lịch dạy sắp tới */}
-          <div className="rounded-4xl bg-white p-6 shadow-sm shadow-slate-200/50">
-            <h2 className="text-xl font-bold text-slate-950 mb-5">Lịch giảng dạy sắp tới</h2>
-            <div className="space-y-4">
-              {upcomingClasses.map((item) => (
-                <div key={item.name} className="rounded-3xl border border-[#e2f2ff] bg-[#f8feff] p-4">
-                  <p className="font-semibold text-slate-900">{item.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{item.time}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Thông báo nội bộ & Hướng dẫn */}
-          <div className="rounded-4xl bg-white p-6 shadow-sm shadow-slate-200/50 flex flex-col justify-between">
+          <div className="flex gap-4 items-start pb-4 border-b border-outline-variant/20">
+            <div className="w-2 h-2 rounded-full bg-secondary mt-2"></div>
             <div>
-              <h2 className="text-xl font-bold text-slate-950 mb-5">Ghi chú & Hướng dẫn nhanh</h2>
-              <div className="space-y-4">
-                <div className="p-4 rounded-3xl bg-yellow-50 border border-yellow-100 text-yellow-800 text-sm">
-                  <strong>Cần làm:</strong> Bạn có 2 bài tập của lớp React nâng cao chưa chấm điểm. Hãy hoàn thành trước ngày 08/06.
-                </div>
-                <div className="p-4 rounded-3xl bg-purple-50 border border-purple-100 text-purple-800 text-sm">
-                  <strong>Thông báo:</strong> Hệ thống sẽ bảo trì định kỳ vào Chủ Nhật tuần này từ 02:00 - 04:00 sáng.
-                </div>
-              </div>
+              <p className="text-body-md text-on-surface">Học viên <strong>Nguyễn Văn A</strong> đã nộp bài tập &ldquo;Comparing Bar Charts&rdquo;</p>
+              <p className="text-caption text-on-surface-variant">5 giờ trước</p>
             </div>
-            <button className="mt-6 w-full py-3 bg-[#87CEFA] text-white font-semibold rounded-2xl hover:bg-[#6ec5f2] transition-colors">
-              Báo cáo sự cố giảng dạy
-            </button>
           </div>
-        </section>
+          <div className="flex gap-4 items-start">
+            <div className="w-2 h-2 rounded-full bg-tertiary mt-2"></div>
+            <div>
+              <p className="text-body-md text-on-surface">Đăng ký mới: <strong>Trần Thị B</strong> tham gia lớp IELTS Writing</p>
+              <p className="text-caption text-on-surface-variant">1 ngày trước</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
