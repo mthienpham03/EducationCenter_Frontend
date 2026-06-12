@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { courseService, userService } from "@/lib/api";
 import type { UserProfile, TeachingAssignment } from "@/lib/types/api.types";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface AssignLecturerModalProps {
   isOpen: boolean;
@@ -34,6 +35,11 @@ export default function AssignLecturerModal({
 
   const [selectedLecturerId, setSelectedLecturerId] = useState("");
   const [selectedRole, setSelectedRole] = useState("main");
+
+  // Remove confirm dialog states
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [removingName, setRemovingName] = useState("");
+  const [isRemoving, setIsRemoving] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -83,18 +89,30 @@ export default function AssignLecturerModal({
     }
   };
 
-  const handleRemove = async (lecturerId: string) => {
-    if (!confirm("Hủy phân công giảng viên này?")) return;
+  const handleRemoveClick = (lecturerId: string, fullName: string) => {
+    setRemovingId(lecturerId);
+    setRemovingName(fullName);
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!removingId) return;
+    setIsRemoving(true);
+    setError(null);
     try {
-      const res = await courseService.removeLecturer(classId, lecturerId);
+      const res = await courseService.removeLecturer(classId, removingId);
       if (res.success) {
         await fetchData(); // refresh list
         onSuccess();
+        setRemovingId(null);
       } else {
         setError(res.message || "Không thể hủy phân công");
+        setRemovingId(null);
       }
     } catch {
       setError("Không thể hủy phân công");
+      setRemovingId(null);
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -250,7 +268,7 @@ export default function AssignLecturerModal({
                         </div>
                       </div>
                       <button
-                        onClick={() => handleRemove(a.lecturerId)}
+                        onClick={() => handleRemoveClick(a.lecturerId, lec?.fullName || a.lecturerId)}
                         className="p-1.5 hover:bg-error-container/30 text-on-surface-variant hover:text-error rounded-lg transition-colors ml-auto"
                         title="Hủy phân công"
                       >
@@ -273,6 +291,19 @@ export default function AssignLecturerModal({
           </button>
         </div>
       </div>
+
+      {/* CONFIRM REMOVE DIALOG */}
+      <ConfirmDialog
+        isOpen={removingId !== null}
+        title="Hủy phân công giảng viên"
+        message={`Bạn có chắc chắn muốn hủy phân công giảng viên "${removingName}" khỏi lớp học này?`}
+        confirmLabel="Hủy phân công"
+        cancelLabel="Hủy"
+        onConfirm={handleConfirmRemove}
+        onCancel={() => setRemovingId(null)}
+        isDanger={true}
+        isLoading={isRemoving}
+      />
     </div>
   );
 }
