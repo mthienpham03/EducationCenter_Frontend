@@ -215,6 +215,113 @@ export interface CreateNotificationRequest {
 }
 
 // ============================================================================
+// COURSE TYPES
+// ============================================================================
+
+export type CourseStatus = "draft" | "published" | "archived";
+export type ClassStatus = "draft" | "published" | "archived";
+export type EnrollmentStatus = "active" | "transferred" | "completed" | "cancelled";
+
+export interface Course {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  thumbnailUrl?: string | null;
+  level?: string | null;
+  status: CourseStatus;
+  startDate?: string | null;
+  endDate?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  classes?: ClassEntity[];
+}
+
+export interface CreateCourseRequest {
+  code: string;
+  name: string;
+  description?: string;
+  thumbnailUrl?: string;
+  level?: string;
+  status?: CourseStatus;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface UpdateCourseRequest {
+  code?: string;
+  name?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  level?: string;
+  status?: CourseStatus;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ClassEntity {
+  id: string;
+  courseId: string;
+  course?: Course;
+  name: string;
+  maxStudents?: number | null;
+  status: ClassStatus;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  enrollmentCount?: number;
+  lecturers?: TeachingAssignment[];
+  students?: Enrollment[];
+}
+
+export interface CreateClassRequest {
+  name: string;
+  maxStudents?: number;
+  status?: ClassStatus;
+}
+
+export interface UpdateClassRequest {
+  name?: string;
+  maxStudents?: number;
+  status?: ClassStatus;
+}
+
+export interface TeachingAssignment {
+  lecturerId: string;
+  courseId: string;
+  classId: string;
+  role: string;
+  assignedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  lecturer?: UserProfile;
+}
+
+export interface AssignLecturerRequest {
+  lecturerId: string;
+  role: string;
+}
+
+export interface Enrollment {
+  studentId: string;
+  courseId: string;
+  classId: string;
+  status: EnrollmentStatus;
+  enrolledAt: string;
+  completedPercent: number;
+  createdAt: string;
+  updatedAt: string;
+  student?: UserProfile;
+}
+
+export interface EnrollStudentRequest {
+  studentId: string;
+}
+
+// ============================================================================
 // REPORT TYPES
 // ============================================================================
 

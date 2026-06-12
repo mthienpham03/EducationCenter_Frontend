@@ -486,6 +486,114 @@ export const reportService = {
 };
 
 // ============================================================================
+// COURSE SERVICE
+// ============================================================================
+
+export const courseService = {
+  /** Lấy danh sách khóa học */
+  getCourses: async (params?: { search?: string; status?: string }): Promise<ApiTypes.ApiResponse<ApiTypes.Course[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.Course[]>>("/courses", { params });
+    return response.data;
+  },
+
+  /** Lấy chi tiết khóa học */
+  getCourseById: async (id: string): Promise<ApiTypes.ApiResponse<ApiTypes.Course>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.Course>>(`/courses/${id}`);
+    return response.data;
+  },
+
+  /** Tạo khóa học mới (Admin) */
+  createCourse: async (data: ApiTypes.CreateCourseRequest): Promise<ApiTypes.ApiResponse<ApiTypes.Course>> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<ApiTypes.Course>>("/courses", data);
+    return response.data;
+  },
+
+  /** Cập nhật khóa học (Admin) */
+  updateCourse: async (id: string, data: ApiTypes.UpdateCourseRequest): Promise<ApiTypes.ApiResponse<ApiTypes.Course>> => {
+    const response = await axiosClient.patch<ApiTypes.ApiResponse<ApiTypes.Course>>(`/courses/${id}`, data);
+    return response.data;
+  },
+
+  /** Xóa khóa học (Admin) */
+  deleteCourse: async (id: string): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/${id}`);
+    return response.data;
+  },
+
+  // ---- CLASS CRUD ----
+
+  /** Lấy danh sách lớp học theo khóa học */
+  getClassesByCourse: async (courseId: string): Promise<ApiTypes.ApiResponse<ApiTypes.ClassEntity[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.ClassEntity[]>>(`/courses/${courseId}/classes`);
+    return response.data;
+  },
+
+  /** Lấy chi tiết lớp học */
+  getClassById: async (id: string): Promise<ApiTypes.ApiResponse<ApiTypes.ClassEntity>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.ClassEntity>>(`/courses/classes/${id}`);
+    return response.data;
+  },
+
+  /** Tạo lớp học mới (Admin) */
+  createClass: async (courseId: string, data: ApiTypes.CreateClassRequest): Promise<ApiTypes.ApiResponse<ApiTypes.ClassEntity>> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<ApiTypes.ClassEntity>>(`/courses/${courseId}/classes`, data);
+    return response.data;
+  },
+
+  /** Cập nhật lớp học (Admin) */
+  updateClass: async (id: string, data: ApiTypes.UpdateClassRequest): Promise<ApiTypes.ApiResponse<ApiTypes.ClassEntity>> => {
+    const response = await axiosClient.patch<ApiTypes.ApiResponse<ApiTypes.ClassEntity>>(`/courses/classes/${id}`, data);
+    return response.data;
+  },
+
+  /** Xóa lớp học (Admin) */
+  deleteClass: async (id: string): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/classes/${id}`);
+    return response.data;
+  },
+
+  // ---- LECTURER ASSIGNMENT ----
+
+  /** Lấy danh sách giảng viên của lớp */
+  getLecturersByClass: async (classId: string): Promise<ApiTypes.ApiResponse<ApiTypes.TeachingAssignment[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.TeachingAssignment[]>>(`/courses/classes/${classId}/lecturers`);
+    return response.data;
+  },
+
+  /** Phân công giảng viên vào lớp (Admin) */
+  assignLecturer: async (classId: string, data: ApiTypes.AssignLecturerRequest): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(`/courses/classes/${classId}/lecturers`, data);
+    return response.data;
+  },
+
+  /** Hủy phân công giảng viên (Admin) */
+  removeLecturer: async (classId: string, lecturerId: string): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/classes/${classId}/lecturers/${lecturerId}`);
+    return response.data;
+  },
+
+  // ---- STUDENT ENROLLMENT ----
+
+  /** Lấy danh sách học viên trong lớp */
+  getStudentsByClass: async (classId: string): Promise<ApiTypes.ApiResponse<ApiTypes.Enrollment[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.Enrollment[]>>(`/courses/classes/${classId}/students`);
+    return response.data;
+  },
+
+  /** Ghi danh học viên vào lớp (Admin) */
+  enrollStudent: async (classId: string, data: ApiTypes.EnrollStudentRequest): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(`/courses/classes/${classId}/students`, data);
+    return response.data;
+  },
+
+  /** Xóa học viên khỏi lớp (Admin) */
+  removeStudent: async (classId: string, studentId: string): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/classes/${classId}/students/${studentId}`);
+    return response.data;
+  },
+};
+
+// ============================================================================
 // API OBJECT - Exported as unified interface
 // ============================================================================
 
@@ -497,6 +605,7 @@ export const api = {
   schedule: scheduleService,
   notification: notificationService,
   report: reportService,
+  course: courseService,
   client: axiosClient,
 };
 

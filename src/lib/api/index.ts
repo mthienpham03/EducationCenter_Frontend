@@ -12,6 +12,7 @@ export {
   scheduleService,
   notificationService,
   reportService,
+  courseService,
   axiosClient,
 } from "./service";
 
@@ -50,6 +51,20 @@ export type {
   CreateNotificationRequest,
   // Report
   Report,
+  // Course & Class
+  Course,
+  CourseStatus,
+  CreateCourseRequest,
+  UpdateCourseRequest,
+  ClassEntity,
+  ClassStatus,
+  CreateClassRequest,
+  UpdateClassRequest,
+  TeachingAssignment,
+  AssignLecturerRequest,
+  Enrollment,
+  EnrollmentStatus,
+  EnrollStudentRequest,
   // Generic
   ApiResponse,
   PaginatedResponse,
