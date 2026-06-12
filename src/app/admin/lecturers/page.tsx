@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { axiosClient } from "@/lib/api/axios";
 import { specializationApi, Specialization } from "@/lib/api/specialization.api";
+import SpecializationSelector from "@/components/admin/SpecializationSelector";
 
 interface UserProfile {
   id: string;
@@ -47,7 +48,6 @@ export default function LecturerManagement() {
   const [createFullName, setCreateFullName] = useState("");
   const [createPhone, setCreatePhone] = useState("");
   const [specializationIds, setSpecializationIds] = useState<string[]>([]);
-  const [specSearchQuery, setSpecSearchQuery] = useState("");
   const [experienceYears, setExperienceYears] = useState("");
   const [createAvatarUrl, setCreateAvatarUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -165,7 +165,6 @@ export default function LecturerManagement() {
         setCreateFullName("");
         setCreatePhone("");
         setSpecializationIds([]);
-        setSpecSearchQuery("");
         setExperienceYears("");
         setCreateAvatarUrl("");
         fetchTutors();
@@ -581,7 +580,7 @@ export default function LecturerManagement() {
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl animate-fade-in flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
               <h3 className="text-headline-md font-bold text-on-surface">Thêm giảng viên mới</h3>
-              <button onClick={() => { setIsCreateOpen(false); setSpecSearchQuery(""); }} className="text-outline hover:text-on-surface">
+              <button onClick={() => setIsCreateOpen(false)} className="text-outline hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -651,75 +650,47 @@ export default function LecturerManagement() {
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="block text-label-md font-bold text-on-surface">Chuyên ngành giảng dạy</label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">search</span>
-                    <input
-                      type="text"
-                      placeholder="Tìm..."
-                      value={specSearchQuery}
-                      onChange={(e) => setSpecSearchQuery(e.target.value)}
-                      className="pl-6 pr-2 py-0.5 border border-outline-variant rounded-md text-[10px] outline-none focus:border-primary transition-all max-w-[120px]"
-                    />
-                  </div>
-                </div>
-                <div className="border border-outline-variant rounded-lg p-3 max-h-36 overflow-y-auto space-y-2 bg-slate-50 shadow-inner">
-                  {(() => {
-                    const filtered = availableSpecs.filter(
-                      (spec) =>
-                        spec.name.toLowerCase().includes(specSearchQuery.toLowerCase()) ||
-                        spec.code.toLowerCase().includes(specSearchQuery.toLowerCase())
-                    );
-                    if (filtered.length === 0) {
-                      return (
-                        <p className="text-xs text-on-surface-variant font-medium">
-                          {specSearchQuery ? "Không tìm thấy chuyên ngành." : "Chưa có chuyên ngành nào. Hãy tạo ở trang Chuyên ngành."}
-                        </p>
-                      );
-                    }
-                    return filtered.map((spec) => {
-                      const isChecked = specializationIds.includes(spec.id);
-                      return (
-                        <label key={spec.id} className="flex items-center gap-2 text-sm text-on-surface cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setSpecializationIds(specializationIds.filter((id) => id !== spec.id));
-                              } else {
-                                setSpecializationIds([...specializationIds, spec.id]);
-                              }
-                            }}
-                            className="rounded border-outline-variant text-primary focus:ring-primary"
-                          />
-                          <span className="font-semibold text-xs bg-primary-fixed/30 text-primary-fixed-variant px-1.5 py-0.5 rounded font-mono mr-1">{spec.code}</span>
-                          <span className="font-medium text-xs text-on-surface">{spec.name}</span>
-                        </label>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
+              <SpecializationSelector
+                availableSpecs={availableSpecs}
+                selectedIds={specializationIds}
+                onSelectionChange={setSpecializationIds}
+              />
 
               <div>
                 <label className="block text-label-md font-bold text-on-surface mb-1">Số năm kinh nghiệm</label>
                 <input
                   type="number"
                   min="0"
+                  max="60"
+                  step="1"
                   value={experienceYears}
-                  onChange={(e) => setExperienceYears(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Chỉ cho phép số
+                    if (value === "" || /^\d+$/.test(value)) {
+                      const num = value === "" ? "" : parseInt(value, 10);
+                      if (num === "" || num <= 60) {
+                        setExperienceYears(value);
+                      }
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    // Chỉ cho phép: số, backspace, delete, tab, arrow keys
+                    const allowedKeys = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight"];
+                    if (!allowedKeys.includes(e.key) && !/\d/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-body-md"
                   placeholder="5"
                 />
+                <p className="text-xs text-on-surface-variant mt-1">Nhập giá trị từ 0 đến 60</p>
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-outline-variant/30">
                 <button
                   type="button"
-                  onClick={() => { setIsCreateOpen(false); setSpecSearchQuery(""); }}
+                  onClick={() => setIsCreateOpen(false)}
                   className="px-4 py-2 border border-outline-variant rounded-lg font-bold hover:bg-surface-container text-on-surface-variant text-sm transition-all"
                 >
                   Hủy
