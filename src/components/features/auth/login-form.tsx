@@ -36,7 +36,16 @@ export function LoginForm() {
       const response = await authApi.login(data);
       if (response.success) {
         setAuth(response.data.user, response.data.accessToken);
-        router.push("/");
+        const role = response.data.user.role;
+        if (role === "LECTURER") {
+          router.push("/lecturer/courses");
+        } else if (role === "STUDENT") {
+          router.push("/student/dashboard");
+        } else if (role === "ADMIN") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/");
+        }
       }
     } catch (error: any) {
       if (error.response?.data?.message) {
@@ -76,9 +85,8 @@ export function LoginForm() {
             <input
               {...register("email")}
               type="email"
-              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
-                errors.email ? "border-red-500 focus:ring-red-200" : "border-gray-200"
-              }`}
+              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${errors.email ? "border-red-500 focus:ring-red-200" : "border-gray-200"
+                }`}
               placeholder="nhap@email.com"
             />
           </div>
@@ -104,9 +112,8 @@ export function LoginForm() {
             <input
               {...register("password")}
               type="password"
-              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
-                errors.password ? "border-red-500 focus:ring-red-200" : "border-gray-200"
-              }`}
+              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${errors.password ? "border-red-500 focus:ring-red-200" : "border-gray-200"
+                }`}
               placeholder="••••••••"
             />
           </div>
