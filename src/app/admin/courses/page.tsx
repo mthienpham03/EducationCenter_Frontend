@@ -5,6 +5,7 @@ import { courseService } from "@/lib/api";
 import type { Course, CourseStatus } from "@/lib/types/api.types";
 import CourseFormModal from "@/components/courses/CourseFormModal";
 import ClassManagementPanel from "@/components/courses/ClassManagementPanel";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -39,6 +40,9 @@ export default function AdminCoursesPage() {
   const [managingCourse, setManagingCourse] = useState<Course | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  
+  // Delete course confirm states
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
@@ -70,15 +74,21 @@ export default function AdminCoursesPage() {
     setShowFormModal(true);
   };
 
-  const handleDelete = async (course: Course) => {
-    if (!confirm(`Xóa khóa học "${course.name}"? Hành động này không thể hoàn tác.`)) return;
-    setDeletingId(course.id);
+  const handleDeleteClick = (course: Course) => {
+    setCourseToDelete(course);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!courseToDelete) return;
+    setDeletingId(courseToDelete.id);
     try {
-      await courseService.deleteCourse(course.id);
-      showSuccess(`Đã xóa khóa học "${course.name}"`);
+      await courseService.deleteCourse(courseToDelete.id);
+      showSuccess(`Đã xóa khóa học "${courseToDelete.name}"`);
+      setCourseToDelete(null);
       await fetchCourses();
     } catch (err: any) {
       alert(err?.response?.data?.message || "Không thể xóa khóa học");
+      setCourseToDelete(null);
     } finally {
       setDeletingId(null);
     }
@@ -290,12 +300,12 @@ export default function AdminCoursesPage() {
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
-                            onClick={() => handleDelete(course)}
+                            onClick={() => handleDeleteClick(course)}
                             disabled={deletingId === course.id}
                             className="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors disabled:opacity-50"
                             title="Xóa"
                           >
-                            {deletingId === course.id ? (
+                            {deletingId === course.id && courseToDelete?.id === course.id ? (
                               <span className="w-4 h-4 border-2 border-error/30 border-t-error rounded-full animate-spin block" />
                             ) : (
                               <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -333,6 +343,19 @@ export default function AdminCoursesPage() {
           onClose={() => setManagingCourse(null)}
         />
       )}
+
+      {/* CONFIRM DELETE COURSE DIALOG */}
+      <ConfirmDialog
+        isOpen={courseToDelete !== null}
+        title="Xóa khóa học"
+        message={`Bạn có chắc chắn muốn xóa khóa học "${courseToDelete?.name}"? Hành động này không thể hoàn tác và tất cả các lớp học thuộc khóa học này cũng sẽ bị xóa.`}
+        confirmLabel="Xóa khóa học"
+        cancelLabel="Hủy"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setCourseToDelete(null)}
+        isDanger={true}
+        isLoading={deletingId === courseToDelete?.id}
+      />
     </div>
   );
 }

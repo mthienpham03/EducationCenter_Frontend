@@ -6,6 +6,7 @@ import type { ClassEntity, Course } from "@/lib/types/api.types";
 import ClassFormModal from "./ClassFormModal";
 import AssignLecturerModal from "./AssignLecturerModal";
 import EnrollStudentModal from "./EnrollStudentModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface ClassManagementPanelProps {
   course: Course;
@@ -33,6 +34,9 @@ export default function ClassManagementPanel({ course, onClose }: ClassManagemen
   const [selectedClass, setSelectedClass] = useState<ClassEntity | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Class delete confirm states
+  const [classToDelete, setClassToDelete] = useState<ClassEntity | null>(null);
+
   const fetchClasses = useCallback(async () => {
     setLoading(true);
     try {
@@ -49,14 +53,20 @@ export default function ClassManagementPanel({ course, onClose }: ClassManagemen
     fetchClasses();
   }, [fetchClasses]);
 
-  const handleDelete = async (cls: ClassEntity) => {
-    if (!confirm(`Xóa lớp "${cls.name}"? Hành động này không thể hoàn tác.`)) return;
-    setDeletingId(cls.id);
+  const handleDeleteClick = (cls: ClassEntity) => {
+    setClassToDelete(cls);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!classToDelete) return;
+    setDeletingId(classToDelete.id);
     try {
-      await courseService.deleteClass(cls.id);
+      await courseService.deleteClass(classToDelete.id);
+      setClassToDelete(null);
       await fetchClasses();
     } catch {
       alert("Không thể xóa lớp học này");
+      setClassToDelete(null);
     } finally {
       setDeletingId(null);
     }
@@ -229,12 +239,12 @@ export default function ClassManagementPanel({ course, onClose }: ClassManagemen
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
-                            onClick={() => handleDelete(cls)}
+                            onClick={() => handleDeleteClick(cls)}
                             disabled={deletingId === cls.id}
                             className="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors disabled:opacity-50"
                             title="Xóa"
                           >
-                            {deletingId === cls.id ? (
+                            {deletingId === cls.id && classToDelete?.id === cls.id ? (
                               <span className="w-4 h-4 border-2 border-error/30 border-t-error rounded-full animate-spin block" />
                             ) : (
                               <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -280,6 +290,19 @@ export default function ClassManagementPanel({ course, onClose }: ClassManagemen
           />
         </>
       )}
+
+      {/* CONFIRM DELETE CLASS DIALOG */}
+      <ConfirmDialog
+        isOpen={classToDelete !== null}
+        title="Xóa lớp học"
+        message={`Bạn có chắc chắn muốn xóa lớp học "${classToDelete?.name}"? Hành động này không thể hoàn tác và mọi dữ liệu về học viên, giảng viên phân công trong lớp sẽ bị mất.`}
+        confirmLabel="Xóa lớp"
+        cancelLabel="Hủy"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setClassToDelete(null)}
+        isDanger={true}
+        isLoading={deletingId === classToDelete?.id}
+      />
     </>
   );
 }
