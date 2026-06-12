@@ -38,9 +38,9 @@ export function ForgotPasswordForm() {
         // Store email to sessionStorage for the next OTP verification page
         sessionStorage.setItem("reset_email", data.email);
         
-        // Wait a short time to show success then redirect to OTP
+        // Wait a short time to show success then redirect to Reset Password
         setTimeout(() => {
-          router.push("/forgot-password/otp");
+          router.push("/forgot-password/reset");
         }, 1500);
       } else {
         setErrorMsg(response.message || "Gửi yêu cầu thất bại. Vui lòng thử lại.");
