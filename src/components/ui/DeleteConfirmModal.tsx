@@ -3,33 +3,18 @@
 import React, { useEffect } from "react";
 
 interface DeleteConfirmModalProps {
-  /** Tên hiển thị của đối tượng bị xóa, dùng trong nội dung mô tả */
+  /** Tên hiển thị của đối tượng bị xóa */
   targetName: string;
-  /** Loại đối tượng: "student" | "lecturer" | string tùy chỉnh */
+  /** Loại đối tượng: "học viên" | "giảng viên" | ... */
   targetType?: string;
-  /** Có đang loading / gọi API không */
+  /** Đang gọi API xóa */
   isDeleting?: boolean;
-  /** Callback khi người dùng bấm Xác nhận xóa */
+  /** Callback khi xác nhận xóa */
   onConfirm: () => void;
-  /** Callback khi người dùng bấm Hủy hoặc đóng modal */
+  /** Callback khi hủy / đóng modal */
   onCancel: () => void;
 }
 
-/**
- * DeleteConfirmModal
- *
- * Modal xác nhận xóa học viên / giảng viên theo thiết kế mockup confirm.html & erase.html.
- * Tái sử dụng được cho cả học viên và giảng viên.
- *
- * @example
- * <DeleteConfirmModal
- *   targetName={selectedUser.fullName}
- *   targetType="học viên"
- *   isDeleting={isDeleting}
- *   onConfirm={handleConfirmDelete}
- *   onCancel={() => setDeleteTarget(null)}
- * />
- */
 export default function DeleteConfirmModal({
   targetName,
   targetType = "người dùng",
@@ -37,56 +22,71 @@ export default function DeleteConfirmModal({
   onConfirm,
   onCancel,
 }: DeleteConfirmModalProps) {
-  // Đóng modal khi nhấn phím ESC
+  // ESC để đóng modal
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isDeleting) {
-        onCancel();
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isDeleting) onCancel();
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [onCancel, isDeleting]);
 
-  // Ngăn scroll nền khi modal mở
+  // Ngăn scroll nền
   useEffect(() => {
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  // Inject keyframe animation một lần vào <head>
+  useEffect(() => {
+    const id = "delete-modal-keyframes";
+    if (document.getElementById(id)) return;
+    const el = document.createElement("style");
+    el.id = id;
+    el.textContent = `
+      @keyframes deleteModalIn {
+        from { opacity: 0; transform: scale(0.93) translateY(12px); }
+        to   { opacity: 1; transform: scale(1)    translateY(0);    }
+      }
+      #delete-modal-card {
+        animation: deleteModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+    `;
+    document.head.appendChild(el);
   }, []);
 
   return (
-    /* Overlay - nhấn ra ngoài để đóng */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(25, 28, 29, 0.5)", backdropFilter: "blur(4px)" }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isDeleting) onCancel();
-      }}
+      style={{ backgroundColor: "rgba(25,28,29,0.5)", backdropFilter: "blur(5px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget && !isDeleting) onCancel(); }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-modal-title"
     >
-      {/* Modal Card */}
+      {/* Card */}
       <div
-        className="bg-white w-full max-w-[440px] rounded-2xl shadow-2xl overflow-hidden"
-        style={{ animation: "modalIn 0.2s ease-out" }}
+        id="delete-modal-card"
+        className="bg-white w-full rounded-2xl overflow-hidden"
+        style={{ maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.18)" }}
       >
-        {/* Header - Icon vùng nguy hiểm */}
-        <div className="pt-10 pb-4 flex flex-col items-center">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 ring-4 ring-red-100">
+        {/* Icon header */}
+        <div className="pt-10 pb-4 flex flex-col items-center gap-0">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+            style={{ backgroundColor: "#fef2f2", outline: "4px solid #fee2e2" }}
+          >
             <span
-              className="material-symbols-outlined text-red-600"
-              style={{ fontSize: 32, fontVariationSettings: "'FILL' 1" }}
+              className="material-symbols-outlined"
+              style={{ fontSize: 32, color: "#dc2626", fontVariationSettings: "'FILL' 1" }}
             >
               delete_forever
             </span>
           </div>
           <h3
             id="delete-modal-title"
-            className="font-bold text-on-surface"
-            style={{ fontSize: "20px", lineHeight: 1.3 }}
+            style={{ fontSize: 20, fontWeight: 700, color: "#191c1d", margin: 0 }}
           >
             Xóa {targetType}?
           </h3>
@@ -94,40 +94,79 @@ export default function DeleteConfirmModal({
 
         {/* Body */}
         <div className="px-8 pb-2 text-center">
-          <p className="text-on-surface-variant leading-relaxed" style={{ fontSize: "15px" }}>
+          <p style={{ fontSize: 15, color: "#434654", lineHeight: 1.65, margin: 0 }}>
             Bạn có chắc chắn muốn xóa {targetType}{" "}
-            <span className="font-bold text-on-surface">{targetName}</span> khỏi hệ thống?{" "}
-            <br />
-            <span className="text-red-600 font-semibold text-sm">
-              Hành động này không thể hoàn tác và mọi dữ liệu liên quan sẽ bị mất.
-            </span>
+            <strong style={{ color: "#191c1d" }}>&quot;{targetName}&quot;</strong> khỏi hệ thống?
+          </p>
+          <p style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, marginTop: 10 }}>
+            Hành động này không thể hoàn tác và mọi dữ liệu liên quan sẽ bị mất.
           </p>
         </div>
 
-        {/* Footer - Actions */}
-        <div className="px-8 py-6 flex gap-3">
-          {/* Nút Hủy */}
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 12, padding: "24px 32px" }}>
+          {/* Hủy */}
           <button
             id="delete-modal-cancel-btn"
             type="button"
             onClick={onCancel}
             disabled={isDeleting}
-            className="flex-1 px-4 py-3 border border-outline text-on-surface font-bold text-sm rounded-xl hover:bg-surface-container-high active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              flex: 1,
+              padding: "12px 16px",
+              border: "1px solid #737686",
+              borderRadius: 12,
+              background: "white",
+              color: "#191c1d",
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: isDeleting ? "not-allowed" : "pointer",
+              opacity: isDeleting ? 0.5 : 1,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => { if (!isDeleting) (e.currentTarget as HTMLButtonElement).style.background = "#edeeef"; }}
+            onMouseLeave={(e) => { if (!isDeleting) (e.currentTarget as HTMLButtonElement).style.background = "white"; }}
           >
             Hủy
           </button>
 
-          {/* Nút Xác nhận xóa */}
+          {/* Xác nhận xóa */}
           <button
             id="delete-modal-confirm-btn"
             type="button"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="flex-1 px-4 py-3 bg-red-600 text-white font-bold text-sm rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            style={{
+              flex: 1,
+              padding: "12px 16px",
+              border: "none",
+              borderRadius: 12,
+              background: "#dc2626",
+              color: "white",
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: isDeleting ? "not-allowed" : "pointer",
+              opacity: isDeleting ? 0.7 : 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              boxShadow: "0 4px 14px rgba(220,38,38,0.3)",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => { if (!isDeleting) (e.currentTarget as HTMLButtonElement).style.background = "#b91c1c"; }}
+            onMouseLeave={(e) => { if (!isDeleting) (e.currentTarget as HTMLButtonElement).style.background = "#dc2626"; }}
           >
             {isDeleting ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                <div
+                  style={{
+                    width: 16, height: 16, borderRadius: "50%",
+                    border: "2px solid rgba(255,255,255,0.3)",
+                    borderTopColor: "white",
+                    animation: "spin 0.7s linear infinite",
+                  }}
+                />
                 Đang xóa...
               </>
             ) : (
@@ -144,20 +183,6 @@ export default function DeleteConfirmModal({
           </button>
         </div>
       </div>
-
-      {/* CSS animation */}
-      <style jsx global>{`
-        @keyframes modalIn {
-          from {
-            opacity: 0;
-            transform: scale(0.92) translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }
