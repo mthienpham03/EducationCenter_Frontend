@@ -4,16 +4,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
-import { 
-  Mail, Lock, LogIn, ArrowRight, Cloud, Star, 
-  Sparkles, Feather, Loader2, BookOpen, GraduationCap, 
-  Sun, Compass 
+import {
+  Mail, Lock, LogIn, ArrowRight, Cloud, Star,
+  Sparkles, Feather, Loader2, BookOpen, GraduationCap,
+  Sun, Compass
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api/auth.api";
 import { useAuthStore } from "@/store/auth.store";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Be_Vietnam_Pro } from "next/font/google";
 
 // Cấu hình font Be Vietnam Pro
@@ -61,7 +61,7 @@ const FloatingIcon = ({ Icon, top, left, delay, hoverX, hoverY, size = 28 }: any
 export function LoginForm() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  
+
   const {
     register,
     handleSubmit,
@@ -109,7 +109,7 @@ export function LoginForm() {
     }
   };
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: {
       opacity: 1,
@@ -121,7 +121,7 @@ export function LoginForm() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
   };
@@ -163,10 +163,10 @@ export function LoginForm() {
       <FloatingIcon Icon={Cloud} top="8%" left="6%" delay={0} hoverX={-40} hoverY={-30} size={24} />
       <FloatingIcon Icon={Sun} top="5%" left="45%" delay={0.3} hoverX={0} hoverY={-40} size={26} />
       <FloatingIcon Icon={Star} top="12%" left="82%" delay={1} hoverX={40} hoverY={-40} size={20} />
-      
+
       <FloatingIcon Icon={BookOpen} top="35%" left="4%" delay={0.8} hoverX={-35} hoverY={20} size={22} />
       <FloatingIcon Icon={GraduationCap} top="40%" left="86%" delay={1.2} hoverX={35} hoverY={-20} size={26} />
-      
+
       <FloatingIcon Icon={Sparkles} top="75%" left="8%" delay={0.5} hoverX={-50} hoverY={40} size={20} />
       <FloatingIcon Icon={Compass} top="85%" left="45%" delay={1.8} hoverX={0} hoverY={45} size={24} />
       <FloatingIcon Icon={Feather} top="70%" left="84%" delay={1.5} hoverX={50} hoverY={30} size={22} />
@@ -200,9 +200,8 @@ export function LoginForm() {
               whileFocus={{ scale: 1.01 }}
               {...register("email")}
               type="email"
-              className={`w-full pl-10 pr-4 py-3 border rounded-xl outline-none transition-all duration-200 bg-gray-50/50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
-                errors.email ? "border-red-500 focus:ring-red-200" : "border-gray-200"
-              }`}
+              className={`w-full pl-10 pr-4 py-3 border rounded-xl outline-none transition-all duration-200 bg-gray-50/50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${errors.email ? "border-red-500 focus:ring-red-200" : "border-gray-200"
+                }`}
               placeholder="nhap@email.com"
             />
           </div>
@@ -224,9 +223,8 @@ export function LoginForm() {
               whileFocus={{ scale: 1.01 }}
               {...register("password")}
               type="password"
-              className={`w-full pl-10 pr-4 py-3 border rounded-xl outline-none transition-all duration-200 bg-gray-50/50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${
-                errors.password ? "border-red-500 focus:ring-red-200" : "border-gray-200"
-              }`}
+              className={`w-full pl-10 pr-4 py-3 border rounded-xl outline-none transition-all duration-200 bg-gray-50/50 placeholder-gray-400 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#87CEFA]/50 focus:border-[#87CEFA] ${errors.password ? "border-red-500 focus:ring-red-200" : "border-gray-200"
+                }`}
               placeholder="••••••••"
             />
           </div>
