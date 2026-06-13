@@ -112,7 +112,7 @@ export function ForgotPasswordForm() {
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
-              <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+              <span className="inline-block w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
               Đang gửi yêu cầu...
             </span>
           ) : (
