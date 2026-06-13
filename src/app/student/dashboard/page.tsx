@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
@@ -9,9 +9,21 @@ export default function StudentDashboard() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
   }, []);
 
   const handleLogout = () => {
@@ -85,12 +97,49 @@ export default function StudentDashboard() {
             <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md hover:bg-primary-container transition-all">
               Đăng ký khóa học mới
             </button>
-            <div className="flex items-center gap-2 ml-2">
+            <div className="flex items-center gap-2 ml-2 relative" ref={menuRef}>
               <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
               </button>
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed">
-                <img alt="Student Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLxSvFFnD38POG-dZL5EQp_pCSg2ISQ7fkCvAqjgZqJond2dPcMwfRiN25amGDce-Kqhw7fRX3tHuACbMPwMYOYgY64ooJlMWyb7M4S_ia154_pKI6ZUGGDStHnKPhcdH883U3URo740ybGOWwlqkjUQ3O0AEF5e0OPL4f0Sk8F_G57KGZIqasZt-odhsA0lAa4aLg9a6Ncu2BcuhfqAnzmSOh2O3lrsnUf8xak1blLSY0yhRxgQoytSVxnW87Ln483I3KvM9hNefB" />
+              <div>
+                <div
+                  className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed block cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen((v) => !v);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter') setMenuOpen((v) => !v); }}
+                >
+                  <img alt="Student Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLxSvFFnD38POG-dZL5EQp_pCSg2ISQ7fkCvAqjgZqJond2dPcMwfRiN25amGDce-Kqhw7fRX3tHuACbMPwMYOYgY64ooJlMWyb7M4S_ia154_pKI6ZUGGDStHnKPhcdH883U3URo740ybGOWwlqkjUQ3O0AEF5e0OPL4f0Sk8F_G57KGZIqasZt-odhsA0lAa4aLg9a6Ncu2BcuhfqAnzmSOh2O3lrsnUf8xak1blLSY0yhRxgQoytSVxnW87Ln483I3KvM9hNefB" />
+                </div>
+                {menuOpen && (
+                  <div className="absolute right-0 top-12 w-44 bg-white shadow-md border border-outline-variant rounded-lg flex flex-col overflow-hidden z-50">
+                    <div className="p-3 border-b border-outline-variant">
+                      <p className="font-bold text-sm truncate">{user?.fullName}</p>
+                      <p className="text-xs text-on-surface-variant truncate">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        window.dispatchEvent(new CustomEvent('open-profile-panel'));
+                      }}
+                      className="flex items-center gap-2 p-3 hover:bg-surface-container-low text-sm text-left w-full text-left"
+                    >
+                      <span className="material-symbols-outlined text-sm">person</span>
+                      Hồ sơ
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); handleLogout(); }}
+                      className="flex items-center gap-2 p-3 text-error hover:bg-error-container/20 text-sm text-left"
+                    >
+                      <span className="material-symbols-outlined text-sm">logout</span>
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

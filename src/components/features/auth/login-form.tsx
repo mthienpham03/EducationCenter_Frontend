@@ -241,11 +241,11 @@ export function LoginForm() {
           >
             {isSubmitting ? (
               <span className="flex items-center gap-2">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full"
-                />
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    className="inline-block w-5 h-5 border-2 border-white/50 border-t-white rounded-full"
+                  />
                 Đang xử lý...
               </span>
             ) : (
@@ -258,18 +258,19 @@ export function LoginForm() {
       </form>
 
       <motion.div variants={itemVariants} className="mt-8 text-center relative z-10">
-        <p className="text-sm text-gray-600">
-          Bạn chưa có tài khoản?{" "}
+        <div className="text-sm text-gray-600">
+          Bạn chưa có tài khoản?{' '}
           <Link href="/register" className="font-bold text-[#87CEFA] hover:text-[#5eb7f7] transition-colors inline-flex items-center gap-1">
             Đăng ký ngay
-            <motion.div
+            <motion.span
               animate={{ x: [0, 4, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
+              className="inline-flex"
             >
               <ArrowRight size={14} />
-            </motion.div>
+            </motion.span>
           </Link>
-        </p>
+        </div>
       </motion.div>
     </motion.div>
   );
