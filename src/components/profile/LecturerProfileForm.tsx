@@ -1,36 +1,100 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { api } from "@/lib/api";
 
 export default function LecturerProfileForm() {
   const [form, setForm] = useState({
-    fullName: "Nguyễn Văn A",
-    email: "lecturer@educenter.com",
-    phone: "0901234567",
-    specialization: "Lập trình Web",
-    degree: "Thạc sĩ CNTT",
-    experienceYears: "5",
-    skills: "ReactJS, NextJS, NodeJS",
+    fullName: "",
+    email: "",
+    phone: "",
+    specialization: "",
+    degree: "",
+    experienceYears: "",
+    skills: "",
     bio: "",
   });
 
-  // State cho avatar
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.profile.getProfile();
+        if (res.success && res.data) {
+          const user = res.data;
+          const specNames = user.lecturerProfile?.specializations?.map((s) => s.name).join(", ") || "";
+          setForm({
+            fullName: user.fullName || "",
+            email: user.email || "",
+            phone: user.phone || "",
+            specialization: specNames,
+            degree: (user.lecturerProfile as any)?.degree || "",
+            experienceYears: String(user.lecturerProfile?.experienceYears || ""),
+            skills: (user.lecturerProfile as any)?.skills || "",
+            bio: user.lecturerProfile?.bio || "",
+          });
+          setAvatarUrl(user.avatarUrl || null);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Xử lý thay đổi Avatar
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setAvatarUrl(URL.createObjectURL(file));
+      try {
+        const res = await api.profile.uploadAvatarImage(file);
+        if (res.success && res.data?.url) {
+          setAvatarUrl(res.data.url);
+          // Auto save avatarUrl to profile
+          await api.profile.updateProfile({
+            avatarUrl: res.data.url
+          });
+        }
+      } catch (error) {
+        console.error("Error uploading avatar:", error);
+        alert("Không thể upload ảnh đại diện");
+      }
     }
   };
 
-  // Input Field có thể thêm props 'readOnly' để khóa
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await api.profile.updateProfile({
+        fullName: form.fullName,
+        phone: form.phone,
+        avatarUrl: avatarUrl || undefined,
+        experienceYears: form.experienceYears ? parseInt(form.experienceYears, 10) : undefined,
+        degree: form.degree,
+        skills: form.skills,
+        bio: form.bio,
+      } as any);
+      if (res.success) {
+        alert("Lưu thông tin thành công!");
+      } else {
+        alert("Lưu thông tin thất bại: " + res.message);
+      }
+    } catch (error: any) {
+      alert("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const InputField = ({ label, name, value, placeholder, readOnly = false }: any) => (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-semibold text-black">{label}</label>
@@ -41,11 +105,19 @@ export default function LecturerProfileForm() {
         placeholder={placeholder}
         readOnly={readOnly}
         className={`w-full border rounded-lg px-4 py-2.5 outline-none transition-all text-black ${
-          readOnly ? "bg-gray-100 border-gray-200 cursor-not-allowed" : "border-gray-300 focus:ring-2 focus:ring-black/20 focus:border-black"
+          readOnly ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300 focus:ring-2 focus:ring-black/20 focus:border-black"
         }`}
       />
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -54,7 +126,6 @@ export default function LecturerProfileForm() {
         {/* LEFT CARD */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm h-fit">
           <div className="flex flex-col items-center">
-            {/* Click vào avatar để chọn ảnh */}
             <div 
               className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-4xl mb-4 border-4 border-white shadow-md cursor-pointer hover:opacity-80 overflow-hidden"
               onClick={() => fileInputRef.current?.click()}
@@ -67,7 +138,6 @@ export default function LecturerProfileForm() {
             <h2 className="text-xl font-bold text-black">{form.fullName}</h2>
             <p className="text-sm text-black">{form.email}</p>
           </div>
-          {/* ... giữ nguyên phần grid thống kê ... */}
         </div>
 
         {/* RIGHT FORM */}
@@ -78,16 +148,15 @@ export default function LecturerProfileForm() {
             <InputField label="Họ và tên" name="fullName" value={form.fullName} />
             <InputField label="Số điện thoại" name="phone" value={form.phone} />
             
-            {/* Các trường bị khóa */}
             <InputField label="Email" name="email" value={form.email} readOnly />
-            <InputField label="Học vị" name="degree" value={form.degree} readOnly />
+            <InputField label="Học vị" name="degree" value={form.degree} />
             <InputField label="Chuyên ngành" name="specialization" value={form.specialization} readOnly />
-            <InputField label="Số năm kinh nghiệm" name="experienceYears" value={form.experienceYears} readOnly />
+            <InputField label="Số năm kinh nghiệm" name="experienceYears" value={form.experienceYears} />
           </div>
 
           <div className="mt-6 flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-black">Kỹ năng chuyên môn</label>
-            <input name="skills" value={form.skills} readOnly className="w-full border bg-gray-100 rounded-lg px-4 py-2.5 text-gray-500 cursor-not-allowed" />
+            <input name="skills" value={form.skills} onChange={handleChange} className="w-full border rounded-lg px-4 py-2.5 text-black outline-none border-gray-300 focus:ring-2 focus:ring-black/20 focus:border-black" />
           </div>
 
           <div className="mt-6 flex flex-col gap-1.5">
@@ -103,8 +172,12 @@ export default function LecturerProfileForm() {
           </div>
 
           <div className="flex justify-end mt-8">
-            <button className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl font-semibold transition-all">
-              Lưu thay đổi
+            <button 
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl font-semibold transition-all disabled:bg-gray-400"
+            >
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
           </div>
         </div>
