@@ -3,6 +3,31 @@
 import { useState, useRef, useEffect } from "react";
 import { api } from "@/lib/api";
 
+interface InputFieldProps {
+  label: string;
+  name: string;
+  value: string;
+  placeholder?: string;
+  readOnly?: boolean;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const InputField = ({ label, name, value, placeholder, readOnly = false, onChange }: InputFieldProps) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-sm font-semibold text-black">{label}</label>
+    <input
+      name={name}
+      value={value}
+      onChange={readOnly ? undefined : onChange}
+      placeholder={placeholder}
+      readOnly={readOnly}
+      className={`w-full border rounded-lg px-4 py-2.5 outline-none transition-all text-black ${
+        readOnly ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300 focus:ring-2 focus:ring-black/20 focus:border-black"
+      }`}
+    />
+  </div>
+);
+
 export default function LecturerProfileForm() {
   const [form, setForm] = useState({
     fullName: "",
@@ -95,22 +120,6 @@ export default function LecturerProfileForm() {
     }
   };
 
-  const InputField = ({ label, name, value, placeholder, readOnly = false }: any) => (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-black">{label}</label>
-      <input
-        name={name}
-        value={value}
-        onChange={readOnly ? undefined : handleChange}
-        placeholder={placeholder}
-        readOnly={readOnly}
-        className={`w-full border rounded-lg px-4 py-2.5 outline-none transition-all text-black ${
-          readOnly ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300 focus:ring-2 focus:ring-black/20 focus:border-black"
-        }`}
-      />
-    </div>
-  );
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -145,13 +154,13 @@ export default function LecturerProfileForm() {
           <h2 className="text-xl font-bold mb-6 text-black border-b border-gray-200 pb-4">Thông tin cá nhân</h2>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <InputField label="Họ và tên" name="fullName" value={form.fullName} />
-            <InputField label="Số điện thoại" name="phone" value={form.phone} />
+            <InputField label="Họ và tên" name="fullName" value={form.fullName} onChange={handleChange} />
+            <InputField label="Số điện thoại" name="phone" value={form.phone} onChange={handleChange} />
             
             <InputField label="Email" name="email" value={form.email} readOnly />
-            <InputField label="Học vị" name="degree" value={form.degree} />
+            <InputField label="Học vị" name="degree" value={form.degree} onChange={handleChange} />
             <InputField label="Chuyên ngành" name="specialization" value={form.specialization} readOnly />
-            <InputField label="Số năm kinh nghiệm" name="experienceYears" value={form.experienceYears} />
+            <InputField label="Số năm kinh nghiệm" name="experienceYears" value={form.experienceYears} onChange={handleChange} />
           </div>
 
           <div className="mt-6 flex flex-col gap-1.5">

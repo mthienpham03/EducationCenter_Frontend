@@ -265,7 +265,12 @@ export const profileService = {
 
     const response = await axiosClient.post<ApiTypes.ApiResponse<ApiTypes.UploadFileResponse["data"]>>(
       "/profile/upload-certificate",
-      formData
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
     return response.data;
   },
@@ -281,7 +286,12 @@ export const profileService = {
 
     const response = await axiosClient.post<ApiTypes.ApiResponse<ApiTypes.UploadFileResponse["data"]>>(
       "/profile/upload-avatar",
-      formData
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
     return response.data;
   },
