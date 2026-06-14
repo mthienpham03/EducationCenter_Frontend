@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/auth.store";
 
 interface InputFieldProps {
   label: string;
@@ -89,6 +90,8 @@ export default function StudentProfileForm() {
           await api.profile.updateProfile({
             avatarUrl: res.data.url
           });
+          // Update global auth store
+          useAuthStore.getState().updateUser({ avatarUrl: res.data.url });
         }
       } catch (error) {
         console.error("Error uploading avatar:", error);
@@ -110,6 +113,12 @@ export default function StudentProfileForm() {
         bio: form.bio,
       } as any);
       if (res.success) {
+        // Update global auth store
+        useAuthStore.getState().updateUser({
+          fullName: form.fullName,
+          phone: form.phone,
+          avatarUrl: avatarUrl || undefined,
+        });
         alert("Lưu thông tin thành công!");
       } else {
         alert("Lưu thông tin thất bại: " + res.message);
