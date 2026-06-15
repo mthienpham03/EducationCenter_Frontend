@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { courseService } from "@/lib/api";
 import type { ClassEntity, Course } from "@/lib/types/api.types";
@@ -31,6 +31,21 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
   const [selectedClass, setSelectedClass] = useState<ClassEntity | null>(null);
   const [classToDelete, setClassToDelete] = useState<ClassEntity | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const PAGE_SIZE = 5;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -80,6 +95,12 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
     setSelectedClass(cls);
     setActiveModal("editClass");
   };
+
+  const totalPages = Math.max(1, Math.ceil(classes.length / PAGE_SIZE));
+  const paginatedClasses = classes.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   if (!course) {
     return (
@@ -137,7 +158,7 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
       </div>
 
       {/* Table Card */}
-      <div className="bg-white rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-outline-variant/30 shadow-sm">
         {/* Toolbar */}
         <div className="p-5 border-b border-outline-variant/20 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-surface-container-lowest">
           <div className="flex gap-3 flex-wrap items-center">
@@ -146,7 +167,7 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div>
           {loading ? (
             <div className="flex items-center justify-center h-48">
               <div className="flex flex-col items-center gap-3">
@@ -167,13 +188,11 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
                   <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Tên lớp</th>
                   <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Sĩ số</th>
                   <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
-                  <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Giảng viên</th>
-                  <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Học viên</th>
-                  <th className="px-6 py-4"></th>
+                  <th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
-                {classes.map((cls) => (
+                {paginatedClasses.map((cls) => (
                   <tr key={cls.id} className="hover:bg-surface-container-lowest transition-colors group">
                     <td className="px-6 py-4">
                       <p className="font-bold text-primary">{cls.name}</p>
@@ -204,46 +223,54 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
                         {STATUS_LABELS[cls.status] || cls.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/admin/courses/${courseId}/classes/${cls.id}/lecturers`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-fixed text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">school</span>
-                        Phân công
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/admin/courses/${courseId}/classes/${cls.id}/students`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-tertiary-fixed text-xs font-bold rounded-lg hover:opacity-80 transition-all"
-                        style={{ color: "#005438" }}
-                      >
-                        <span className="material-symbols-outlined text-[14px]">group_add</span>
-                        Ghi danh
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-6 py-4 text-right">
+
+                      {/* Menu thao tác */}
+                      <div className="relative inline-block" ref={openMenuId === cls.id ? menuRef : undefined}>
                         <button
-                          onClick={() => openEdit(cls)}
-                          className="p-1.5 hover:bg-primary-fixed rounded-lg text-on-surface-variant hover:text-primary transition-colors"
-                          title="Chỉnh sửa"
+                          onClick={() => setOpenMenuId(openMenuId === cls.id ? null : cls.id)}
+                          className="p-2 hover:bg-surface-container-high rounded-lg text-on-surface-variant transition-all"
+                          title="Thao tác"
                         >
-                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                          <span className="material-symbols-outlined">more_vert</span>
                         </button>
-                        <button
-                          onClick={() => handleDeleteClick(cls)}
-                          disabled={deletingId === cls.id}
-                          className="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors disabled:opacity-50"
-                          title="Xóa"
-                        >
-                          {deletingId === cls.id ? (
-                            <span className="w-4 h-4 border-2 border-error/30 border-t-error rounded-full animate-spin block" />
-                          ) : (
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          )}
-                        </button>
+
+                        {openMenuId === cls.id && (
+                          <div className="absolute right-0 bottom-full mb-2 w-52 bg-white border border-outline-variant rounded-xl shadow-lg z-50 py-1 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                            <Link
+                              href={`/admin/courses/${courseId}/classes/${cls.id}/students`}
+                              className="flex items-center gap-2.5 px-4 py-3 hover:bg-surface-container-low transition-colors text-sm text-on-surface"
+                              onClick={() => setOpenMenuId(null)}
+                            >
+                              <span className="material-symbols-outlined text-[20px] text-on-surface-variant">group</span>
+                              Quản lý học viên
+                            </Link>
+                            <Link
+                              href={`/admin/courses/${courseId}/classes/${cls.id}/lecturers`}
+                              className="flex items-center gap-2.5 px-4 py-3 hover:bg-surface-container-low transition-colors text-sm text-on-surface"
+                              onClick={() => setOpenMenuId(null)}
+                            >
+                              <span className="material-symbols-outlined text-[20px] text-on-surface-variant">school</span>
+                              Quản lý giảng viên
+                            </Link>
+                            <button
+                              onClick={() => { openEdit(cls); setOpenMenuId(null); }}
+                              className="flex items-center gap-2.5 px-4 py-3 hover:bg-surface-container-low transition-colors text-sm text-on-surface w-full text-left"
+                            >
+                              <span className="material-symbols-outlined text-[20px] text-on-surface-variant">edit</span>
+                              Chỉnh sửa lớp
+                            </button>
+                            <div className="border-t border-outline-variant/30 my-1" />
+                            <button
+                              onClick={() => { handleDeleteClick(cls); setOpenMenuId(null); }}
+                              disabled={deletingId === cls.id}
+                              className="flex items-center gap-2.5 px-4 py-3 hover:bg-error-container/20 transition-colors text-sm text-error w-full text-left disabled:opacity-50"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">delete</span>
+                              Xóa lớp
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -252,6 +279,60 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
             </table>
           )}
         </div>
+
+        {/* Footer / Pagination */}
+        {!loading && classes.length > 0 && (
+          <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-on-surface-variant">
+              Hiển thị <span className="font-bold text-on-surface">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, classes.length)}</span> trong tổng số <span className="font-bold text-on-surface">{classes.length}</span> lớp học
+            </p>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                {/* Previous */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Trang trước"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  const isNear = Math.abs(page - currentPage) <= 1 || page === 1 || page === totalPages;
+                  const isDot  = !isNear && (page === currentPage - 2 || page === currentPage + 2);
+                  if (!isNear && !isDot) return null;
+                  if (isDot) return <span key={page} className="w-8 text-center text-on-surface-variant text-sm">…</span>;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all ${
+                        page === currentPage
+                          ? "bg-primary text-white shadow-sm shadow-primary/30"
+                          : "border border-outline-variant/50 text-on-surface-variant hover:bg-primary-fixed hover:text-primary"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                {/* Next */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Trang tiếp"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Sub-modals */}

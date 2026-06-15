@@ -617,6 +617,12 @@ export const courseService = {
     const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/classes/${classId}/students/${studentId}`);
     return response.data;
   },
+
+  /** Chuyển lớp học viên (Admin) */
+  transferStudent: async (classId: string, studentId: string, data: { targetClassId: string; reason?: string; note?: string }): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(`/courses/classes/${classId}/students/${studentId}/transfer`, data);
+    return response.data;
+  },
 };
 
 // ============================================================================
