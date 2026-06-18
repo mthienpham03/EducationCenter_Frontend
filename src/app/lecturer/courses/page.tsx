@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { axiosClient } from "@/lib/api/axios";
+import { api } from "@/lib/api";
 
 interface Course {
   id: string;
@@ -25,56 +25,46 @@ export default function LecturerCoursesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
-    // Giả lập gọi API lấy danh sách khóa học của giảng viên này
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        // Trong tương lai, khi có API thật:
-        // const res = await axiosClient.get("/lecturer/courses");
-        // setCourses(res.data);
+        const res = await api.course.getCourses();
         
-        // Mock data chất lượng cao và đồng bộ với thiết kế
-        setCourses([
-          {
-            id: "ielts-mastery",
-            title: "IELTS Mastery (Standard Edition)",
-            category: "IELTS Prep",
-            studentsCount: 48,
-            chaptersCount: 12,
-            duration: "18.5 giờ",
-            status: "Active",
-            description: "Chương trình đào tạo toàn diện 4 kỹ năng IELTS chuẩn Cambridge, cam kết đầu ra 6.5+ cho học viên.",
-            rating: 4.9,
-            reviewsCount: 24,
-            gradient: "from-primary/80 to-primary-container",
-          },
-          {
-            id: "ielts-writing",
-            title: "IELTS Writing Intensive",
-            category: "IELTS Prep",
-            studentsCount: 32,
-            chaptersCount: 8,
-            duration: "12 giờ",
-            status: "Active",
-            description: "Khóa học chuyên sâu phát triển tư duy viết, phân tích biểu đồ và nghị luận xã hội kèm nhận xét chi tiết.",
-            rating: 4.8,
-            reviewsCount: 18,
-            gradient: "from-secondary/80 to-secondary-container",
-          },
-          {
-            id: "toeic-750",
-            title: "TOEIC Target 750+",
-            category: "TOEIC Prep",
-            studentsCount: 0,
-            chaptersCount: 6,
-            duration: "10 giờ",
-            status: "Draft",
-            description: "Hệ thống từ vựng cốt lõi và các bẫy thường gặp trong phần nghe/đọc của bài thi TOEIC định dạng mới.",
-            rating: 0,
-            reviewsCount: 0,
-            gradient: "from-tertiary/80 to-tertiary-container",
-          },
-        ]);
+        if (res.success && res.data) {
+          const gradients = [
+            "from-primary/80 to-primary-container",
+            "from-secondary/80 to-secondary-container",
+            "from-tertiary/80 to-tertiary-container",
+          ];
+
+          const mappedCourses: Course[] = res.data.map((c, index) => {
+            let mappedStatus: "Active" | "Draft" | "Archived" = "Draft";
+            if (c.status === "published") mappedStatus = "Active";
+            else if (c.status === "archived") mappedStatus = "Archived";
+
+            // Tính tổng số học viên nếu API có trả về thông tin classes
+            let studentsCount = 0;
+            if (c.classes && Array.isArray(c.classes)) {
+              studentsCount = c.classes.reduce((sum, cls) => sum + (cls.enrollmentCount || 0), 0);
+            }
+
+            return {
+              id: c.id,
+              title: c.name,
+              category: c.level || "Chưa phân loại",
+              studentsCount: studentsCount,
+              chaptersCount: 0, // Sẽ cập nhật khi có API chi tiết chương học
+              duration: "--", // Sẽ cập nhật khi có API
+              status: mappedStatus,
+              description: c.description || "Chưa có mô tả cho khóa học này.",
+              rating: 0, // Mock hoặc đợi API đánh giá
+              reviewsCount: 0,
+              gradient: gradients[index % gradients.length],
+            };
+          });
+          
+          setCourses(mappedCourses);
+        }
       } catch (error) {
         console.error("Lỗi khi tải danh sách khóa học:", error);
       } finally {
