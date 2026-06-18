@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/auth.store";
 
 export default function SideNavBar() {
   const pathname = usePathname();
+  // Lắng nghe thay đổi từ store
+  const user = useAuthStore((state) => state.user);
 
   const navItems = [
     { name: "Bảng điều khiển", icon: "dashboard", path: "/lecturer/dashboard" },
@@ -44,6 +47,8 @@ export default function SideNavBar() {
           <span className="material-symbols-outlined">add</span>
           Khóa học mới
         </button>
+        
+        {/* Nút cài đặt hiển thị thông tin người dùng hiện tại */}
         <Link
           href="/lecturer/profile"
           className={`flex items-center gap-base p-base mb-1 cursor-pointer transition-all rounded-lg ${
@@ -52,8 +57,17 @@ export default function SideNavBar() {
               : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"
           }`}
         >
-          <span className="material-symbols-outlined">settings</span>
-          <span className="font-label-md text-label-md">Cài đặt</span>
+          {user?.avatarUrl ? (
+             <img 
+               key={user.avatarUrl} 
+               src={user.avatarUrl} 
+               alt="Avatar" 
+               className="w-6 h-6 rounded-full object-cover" 
+             />
+          ) : (
+            <span className="material-symbols-outlined">settings</span>
+          )}
+          <span className="font-label-md text-label-md">{user?.fullName || "Cài đặt"}</span>
         </Link>
       </div>
     </aside>

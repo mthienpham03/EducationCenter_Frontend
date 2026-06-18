@@ -91,7 +91,11 @@ export default function AdminLayout({
                 </div>
 
                 <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                  <img alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKqpoSQTK4ZTRaZGPpqXw0nJsr3Tzcc7F1utCBkanBtSd4ixuwduA5rjzTtwveak9O556huC5-u8IBqgY54e1l4SzJmAncB5Jh4HGfbxuGc1RnLFbAh_1Axl17wGzHWRYVezKvFLXmznolNEibjfRflhhWyVhbBj1fuHL6Pk6ma_Cq6HM18cf_7m47uURAGVNjzqyc6lPeX7CJt37Pn2Cij13pkd_9_9Irqr4NjK2n5fyFrGJhZlkrprgLg6iYOFek2Ji5NqTpK5wS" />
+                  {mounted && user?.avatarUrl ? (
+                    <img key={user.avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container" src={user.avatarUrl} />
+                  ) : (
+                    <img alt="Avatar" className="w-10 h-10 rounded-full object-cover border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKqpoSQTK4ZTRaZGPpqXw0nJsr3Tzcc7F1utCBkanBtSd4ixuwduA5rjzTtwveak9O556huC5-u8IBqgY54e1l4SzJmAncB5Jh4HGfbxuGc1RnLFbAh_1Axl17wGzHWRYVezKvFLXmznolNEibjfRflhhWyVhbBj1fuHL6Pk6ma_Cq6HM18cf_7m47uURAGVNjzqyc6lPeX7CJt37Pn2Cij13pkd_9_9Irqr4NjK2n5fyFrGJhZlkrprgLg6iYOFek2Ji5NqTpK5wS" />
+                  )}
                 </button>
 
                 {isDropdownOpen && (

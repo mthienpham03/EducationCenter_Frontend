@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { profileService } from "@/lib/api/service";
+import { useAuthStore } from "@/store/auth.store";
 
 export default function AdminProfileForm() {
   const [form, setForm] = useState({
@@ -15,6 +17,7 @@ export default function AdminProfileForm() {
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -22,14 +25,78 @@ export default function AdminProfileForm() {
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setAvatarUrl(URL.createObjectURL(e.target.files[0]));
+      const file = e.target.files[0];
+      setAvatarUrl(URL.createObjectURL(file));
+      (async () => {
+        try {
+          setLoading(true);
+          const res = await profileService.uploadAvatarImage(file);
+          if (res?.data?.url) {
+            const baseUrl = res.data.url;
+            // Lưu vào database ngay lập tức
+            await profileService.updateProfile({ avatarUrl: baseUrl });
+            
+            const freshUrl = `${baseUrl.split('?')[0]}?t=${Date.now()}`;
+            setAvatarUrl(freshUrl);
+            try { useAuthStore.getState().updateUser({ avatarUrl: freshUrl }); } catch {}
+            alert("Cập nhật ảnh đại diện thành công!");
+          }
+        } catch (err: any) {
+          console.error('Upload avatar failed', err);
+          alert('Không thể tải ảnh lên: ' + (err.response?.data?.message || err.message));
+        } finally { setLoading(false); }
+      })();
     }
   };
 
-  const InputField = ({ label, name, value, placeholder, readOnly = false }: any) => (
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await profileService.getProfile();
+        if (!mounted) return;
+        if (res?.data) {
+          const p = res.data;
+          setForm((prev) => ({ ...prev, fullName: p.fullName || prev.fullName, email: p.email || prev.email, phone: p.phone || prev.phone }));
+          const freshAvatar = p.avatarUrl ? `${p.avatarUrl.split('?')[0]}?t=${Date.now()}` : null;
+          if (freshAvatar) setAvatarUrl(freshAvatar);
+          try {
+            useAuthStore.getState().updateUser({
+              fullName: p.fullName,
+              avatarUrl: freshAvatar,
+            });
+          } catch {}
+        }
+      } catch (err) { console.error('Load profile failed', err); }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const cleanAvatarUrl = avatarUrl ? avatarUrl.split('?')[0] : null;
+      const payload: any = { fullName: form.fullName, phone: form.phone, bio: form.bio };
+      if (cleanAvatarUrl) payload.avatarUrl = cleanAvatarUrl;
+      const res = await profileService.updateProfile(payload);
+      if (res?.success) {
+        alert('Lưu thông tin thành công');
+        useAuthStore.getState().updateUser({ fullName: form.fullName, avatarUrl: cleanAvatarUrl });
+      } else {
+        alert(res?.message || 'Lỗi khi lưu');
+      }
+    } catch (err: any) {
+      console.error('Save failed', err);
+      const apiErr = err?.response?.data || err?.message || err;
+      alert('Lỗi: ' + JSON.stringify(apiErr));
+    } finally { setLoading(false); }
+  };
+
+  const InputField = ({ label, name, value, placeholder, readOnly = false, type = "text" }: any) => (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-semibold text-black">{label}</label>
       <input
+        type={type}
         name={name}
         value={value}
         onChange={readOnly ? undefined : handleChange}
@@ -97,7 +164,10 @@ export default function AdminProfileForm() {
           </div>
 
           <div className="flex justify-end mt-8">
-            <button className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-black/20">
+            <button 
+              onClick={handleSave}
+              className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-black/20"
+            >
               Lưu thông tin
             </button>
           </div>

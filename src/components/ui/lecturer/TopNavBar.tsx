@@ -60,7 +60,13 @@ export default function TopNavBar() {
               }}
             >
               {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.fullName} className="w-full h-full object-cover" />
+                /* ĐÃ SỬA: Thêm key={user.avatarUrl} vào đây */
+                <img 
+                  key={user.avatarUrl} 
+                  src={user.avatarUrl} 
+                  alt={user.fullName} 
+                  className="w-full h-full object-cover" 
+                />
               ) : (
                 <span className="material-symbols-outlined text-primary">person</span>
               )}

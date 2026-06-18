@@ -112,7 +112,11 @@ export default function StudentDashboard() {
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter') setMenuOpen((v) => !v); }}
                 >
-                  <img alt="Student Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLxSvFFnD38POG-dZL5EQp_pCSg2ISQ7fkCvAqjgZqJond2dPcMwfRiN25amGDce-Kqhw7fRX3tHuACbMPwMYOYgY64ooJlMWyb7M4S_ia154_pKI6ZUGGDStHnKPhcdH883U3URo740ybGOWwlqkjUQ3O0AEF5e0OPL4f0Sk8F_G57KGZIqasZt-odhsA0lAa4aLg9a6Ncu2BcuhfqAnzmSOh2O3lrsnUf8xak1blLSY0yhRxgQoytSVxnW87Ln483I3KvM9hNefB" />
+                  {user?.avatarUrl ? (
+                    <img key={user.avatarUrl} alt="Student Avatar" className="w-full h-full object-cover" src={user.avatarUrl} />
+                  ) : (
+                    <img alt="Student Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLxSvFFnD38POG-dZL5EQp_pCSg2ISQ7fkCvAqjgZqJond2dPcMwfRiN25amGDce-Kqhw7fRX3tHuACbMPwMYOYgY64ooJlMWyb7M4S_ia154_pKI6ZUGGDStHnKPhcdH883U3URo740ybGOWwlqkjUQ3O0AEF5e0OPL4f0Sk8F_G57KGZIqasZt-odhsA0lAa4aLg9a6Ncu2BcuhfqAnzmSOh2O3lrsnUf8xak1blLSY0yhRxgQoytSVxnW87Ln483I3KvM9hNefB" />
+                  )}
                 </div>
                 {menuOpen && (
                   <div className="absolute right-0 top-12 w-44 bg-white shadow-md border border-outline-variant rounded-lg flex flex-col overflow-hidden z-50">
