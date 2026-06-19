@@ -4,7 +4,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import { courseService } from "@/lib/api";
 import type { Course, CourseStatus } from "@/lib/types/api.types";
 import CourseFormModal from "@/components/courses/CourseFormModal";
-import ClassManagementPanel from "@/components/courses/ClassManagementPanel";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -33,10 +35,12 @@ export default function AdminCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "all">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 5;
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [managingCourse, setManagingCourse] = useState<Course | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -48,6 +52,7 @@ export default function AdminCoursesPage() {
         status: statusFilter !== "all" ? statusFilter : undefined,
       });
       setCourses(res.data || []);
+      setCurrentPage(1); // reset về trang đầu khi filter/search thay đổi
     } catch {
       setCourses([]);
     } finally {
@@ -60,6 +65,8 @@ export default function AdminCoursesPage() {
     return () => clearTimeout(timer);
   }, [fetchCourses]);
 
+  const router = useRouter();
+
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(null), 3000);
@@ -70,13 +77,18 @@ export default function AdminCoursesPage() {
     setShowFormModal(true);
   };
 
-  const handleDelete = async (course: Course) => {
-    if (!confirm(`Xóa khóa học "${course.name}"? Hành động này không thể hoàn tác.`)) return;
-    setDeletingId(course.id);
+  const handleDeleteClick = (course: Course) => {
+    setCourseToDelete(course);
+  };
+
+  const confirmDelete = async () => {
+    if (!courseToDelete) return;
+    setDeletingId(courseToDelete.id);
     try {
-      await courseService.deleteCourse(course.id);
-      showSuccess(`Đã xóa khóa học "${course.name}"`);
+      await courseService.deleteCourse(courseToDelete.id);
+      showSuccess(`Đã xóa khóa học "${courseToDelete.name}"`);
       await fetchCourses();
+      setCourseToDelete(null);
     } catch (err: any) {
       alert(err?.response?.data?.message || "Không thể xóa khóa học");
     } finally {
@@ -90,6 +102,12 @@ export default function AdminCoursesPage() {
     draft: courses.filter((c) => c.status === "draft").length,
     archived: courses.filter((c) => c.status === "archived").length,
   };
+
+  const totalPages = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
+  const paginatedCourses = courses.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <div className="space-y-stack-md">
@@ -213,7 +231,7 @@ export default function AdminCoursesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
-                {courses.map((course) => {
+                {paginatedCourses.map((course) => {
                   const pill = STATUS_PILL[course.status];
                   return (
                     <tr key={course.id} className="hover:bg-surface-container-lowest transition-colors group">
@@ -270,13 +288,13 @@ export default function AdminCoursesPage() {
 
                       {/* Class management */}
                       <td className="px-6 py-4">
-                        <button
-                          onClick={() => setManagingCourse(course)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
+                        <Link
+                          href={`/admin/courses/${course.id}/classes`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
                         >
                           <span className="material-symbols-outlined text-[14px]">meeting_room</span>
                           Quản lý lớp
-                        </button>
+                        </Link>
                       </td>
 
                       {/* Actions */}
@@ -290,7 +308,7 @@ export default function AdminCoursesPage() {
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
-                            onClick={() => handleDelete(course)}
+                            onClick={() => handleDeleteClick(course)}
                             disabled={deletingId === course.id}
                             className="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors disabled:opacity-50"
                             title="Xóa"
@@ -311,10 +329,57 @@ export default function AdminCoursesPage() {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer / Pagination */}
         {!loading && courses.length > 0 && (
-          <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/20">
-            <p className="text-sm text-on-surface-variant">Hiển thị {courses.length} khóa học</p>
+          <div className="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-on-surface-variant">
+              Hiển thị <span className="font-bold text-on-surface">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, courses.length)}</span> trong tổng số <span className="font-bold text-on-surface">{courses.length}</span> khóa học
+            </p>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                {/* Previous */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Trang trước"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  const isNear = Math.abs(page - currentPage) <= 1 || page === 1 || page === totalPages;
+                  const isDot  = !isNear && (page === currentPage - 2 || page === currentPage + 2);
+                  if (!isNear && !isDot) return null;
+                  if (isDot) return <span key={page} className="w-8 text-center text-on-surface-variant text-sm">…</span>;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all ${
+                        page === currentPage
+                          ? "bg-primary text-white shadow-sm shadow-primary/30"
+                          : "border border-outline-variant/50 text-on-surface-variant hover:bg-primary-fixed hover:text-primary"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                {/* Next */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Trang tiếp"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -327,12 +392,20 @@ export default function AdminCoursesPage() {
         editingCourse={editingCourse}
       />
 
-      {managingCourse && (
-        <ClassManagementPanel
-          course={managingCourse}
-          onClose={() => setManagingCourse(null)}
-        />
-      )}
+      <ConfirmDialog
+        isOpen={!!courseToDelete}
+        title="Xác nhận xóa khóa học"
+        message={
+          <>
+            Bạn có chắc chắn muốn xóa khóa học <span className="font-bold text-on-surface">{courseToDelete?.name}</span> không? Hành động này không thể hoàn tác.
+          </>
+        }
+        confirmText="Xóa khóa học"
+        cancelText="Hủy"
+        onConfirm={confirmDelete}
+        onCancel={() => setCourseToDelete(null)}
+        isLoading={!!deletingId}
+      />
     </div>
   );
 }
