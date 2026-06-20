@@ -29,7 +29,7 @@ export default function LecturerCoursesPage() {
       try {
         setLoading(true);
         const res = await api.course.getCourses();
-        
+
         if (res.success && res.data) {
           const gradients = [
             "from-primary/80 to-primary-container",
@@ -37,15 +37,29 @@ export default function LecturerCoursesPage() {
             "from-tertiary/80 to-tertiary-container",
           ];
 
-          const mappedCourses: Course[] = res.data.map((c, index) => {
+          const mappedCourses: Course[] = await Promise.all(res.data.map(async (c, index) => {
             let mappedStatus: "Active" | "Draft" | "Archived" = "Draft";
             if (c.status === "published") mappedStatus = "Active";
             else if (c.status === "archived") mappedStatus = "Archived";
 
-            // Tính tổng số học viên nếu API có trả về thông tin classes
+            // Lấy chính xác số học viên của khóa học bằng cách gọi API classes -> students
             let studentsCount = 0;
-            if (c.classes && Array.isArray(c.classes)) {
-              studentsCount = c.classes.reduce((sum, cls) => sum + (cls.enrollmentCount || 0), 0);
+            try {
+              const classesRes = await api.course.getClassesByCourse(c.id);
+              if (classesRes.success && classesRes.data) {
+                const countPromises = classesRes.data.map(async (cls) => {
+                  const studentsRes = await api.course.getStudentsByClass(cls.id);
+                  if (studentsRes.success && studentsRes.data) {
+                    // Đếm những học viên có trạng thái 'active' (đang học)
+                    return studentsRes.data.filter((s: any) => s.status === 'active').length;
+                  }
+                  return 0;
+                });
+                const counts = await Promise.all(countPromises);
+                studentsCount = counts.reduce((sum, count) => sum + count, 0);
+              }
+            } catch (err) {
+              console.error(`Lỗi khi đếm học viên cho khóa ${c.id}:`, err);
             }
 
             return {
@@ -61,8 +75,8 @@ export default function LecturerCoursesPage() {
               reviewsCount: 0,
               gradient: gradients[index % gradients.length],
             };
-          });
-          
+          }));
+
           setCourses(mappedCourses);
         }
       } catch (error) {
@@ -77,8 +91,8 @@ export default function LecturerCoursesPage() {
 
   // Filter & Search logic
   const filteredCourses = courses.filter((course) => {
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          course.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || course.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -207,11 +221,10 @@ export default function LecturerCoursesPage() {
                   <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-caption font-semibold">
                     {course.category}
                   </span>
-                  <span className={`px-3 py-1 rounded-full text-caption font-bold ${
-                    course.status === "Active" 
-                      ? "bg-green-500/20 text-green-300 border border-green-400/30" 
+                  <span className={`px-3 py-1 rounded-full text-caption font-bold ${course.status === "Active"
+                      ? "bg-green-500/20 text-green-300 border border-green-400/30"
                       : "bg-yellow-500/20 text-yellow-300 border border-yellow-400/30"
-                  }`}>
+                    }`}>
                     {course.status === "Active" ? "Đang hoạt động" : course.status === "Draft" ? "Bản nháp" : "Lưu trữ"}
                   </span>
                 </div>
@@ -250,13 +263,23 @@ export default function LecturerCoursesPage() {
                 <div className="pt-2 flex gap-2">
                   <Link
                     href={`/lecturer/courses/${course.id}/curriculum`}
-                    className="flex-1 bg-primary text-on-primary font-label-md py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all text-center shadow-sm"
+                    style={{ flex: '58' }}
+                    className="bg-primary text-on-primary font-label-md py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all text-center shadow-sm min-w-0"
                   >
-                    <span className="material-symbols-outlined text-base">settings</span>
-                    Quản lý chương trình
+                    <span className="material-symbols-outlined text-base shrink-0">settings</span>
+                    <span className="truncate">Quản lý chương trình</span>
                   </Link>
-                  <button 
-                    className="px-3 border border-outline-variant hover:bg-surface-container-low rounded-lg text-on-surface-variant flex items-center justify-center transition-all"
+                  <Link
+                    href={`/lecturer/courses/${course.id}/students`}
+                    style={{ flex: '30' }}
+                    className="border border-outline-variant hover:bg-surface-container-low text-on-surface-variant font-label-md py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm min-w-0"
+                  >
+                    <span className="material-symbols-outlined text-base shrink-0">group</span>
+                    <span className="truncate">Học viên</span>
+                  </Link>
+                  <button
+                    style={{ flex: '12' }}
+                    className="border border-outline-variant hover:bg-surface-container-low rounded-lg text-on-surface-variant flex items-center justify-center transition-all shadow-sm"
                     title="Cài đặt khóa học"
                   >
                     <span className="material-symbols-outlined text-lg">more_vert</span>
