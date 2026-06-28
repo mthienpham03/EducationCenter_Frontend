@@ -66,7 +66,7 @@ export default function LecturerProfileForm() {
             email: p.email || prev.email,
             phone: p.phone || prev.phone,
             bio: p.lecturerProfile?.bio || prev.bio,
-            degree: p.lecturerProfile?.degree || prev.degree,
+            degree: (p.lecturerProfile as any)?.degree || prev.degree,
             specialization: p.lecturerProfile?.specializations?.[0]?.name || prev.specialization,
             experienceYears: p.lecturerProfile?.experienceYears?.toString() || prev.experienceYears,
           }));

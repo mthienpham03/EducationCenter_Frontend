@@ -5,6 +5,7 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/auth.store";
 import * as ApiTypes from "@/lib/types/api.types";
+import { documentService } from "./documents.api";
 
 // ============================================================================
 // AXIOS CLIENT CONFIGURATION
@@ -294,6 +295,8 @@ export const courseService = {
   },
 };
 
+export { documentService } from "./documents.api";
+
 export const api = {
   auth: authService,
   user: userService,
@@ -303,6 +306,7 @@ export const api = {
   notification: notificationService,
   report: reportService,
   course: courseService,
+  document: documentService,
   client: axiosClient,
 };
 

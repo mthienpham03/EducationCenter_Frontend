@@ -31,22 +31,22 @@ export default function StudentProfileForm() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       try {
         setLoading(true);
         const res = await profileService.uploadAvatarImage(file);
-        
+
         if (res?.data) {
           const baseUrl = typeof res.data === 'string' ? res.data : (res.data as any).url;
-          
+
           // Gửi request cập nhật avatarUrl vào database ngay lập tức
           await profileService.updateProfile({ avatarUrl: baseUrl });
 
           // Tạo link ảnh mới ép trình duyệt tải lại
           const freshUrl = `${baseUrl.split('?')[0]}?t=${Date.now()}`;
-          
+
           setAvatarUrl(freshUrl);
-          
+
           // Cập nhật lên Store ngay để TopNavBar đổi ảnh ngay lập tức!
           useAuthStore.getState().updateUser({ avatarUrl: freshUrl });
           alert("Cập nhật ảnh đại diện thành công!");
@@ -71,12 +71,12 @@ export default function StudentProfileForm() {
           email: p.email || "",
           phone: p.phone || "",
           studentCode: p.studentProfile?.studentCode || "Chưa cập nhật",
-          school: p.studentProfile?.school || "",
-          major: p.studentProfile?.major || "",
-          dateOfBirth: p.studentProfile?.dateOfBirth ? p.studentProfile.dateOfBirth.split('T')[0] : "",
-          address: p.studentProfile?.address || "",
-          learningGoal: p.studentProfile?.learningGoal || "",
-          bio: p.studentProfile?.bio || "",
+          school: (p.studentProfile as any)?.school || "",
+          major: (p.studentProfile as any)?.major || "",
+          dateOfBirth: (p.studentProfile as any)?.dateOfBirth ? (p.studentProfile as any).dateOfBirth.split('T')[0] : "",
+          address: (p.studentProfile as any)?.address || "",
+          learningGoal: (p.studentProfile as any)?.learningGoal || "",
+          bio: (p.studentProfile as any)?.bio || "",
         });
 
         // Xử lý link ảnh chống cache
@@ -118,16 +118,16 @@ export default function StudentProfileForm() {
         address: form.address || null,
         school: form.school || null,
         major: form.major || null,
-        avatarUrl: avatarUrl ? avatarUrl.split('?')[0] : null,
+        avatarUrl: avatarUrl ? avatarUrl.split('?')[0] : undefined,
       };
 
       const res = await profileService.updateProfile(payload);
       if (res?.success) {
         alert("Lưu thông tin thành công!");
-        
+
         // Chỉ cập nhật tên vào store, KHÔNG TẢI LẠI ẢNH TỪ SERVER NỮA
         useAuthStore.getState().updateUser({ fullName: form.fullName });
-        
+
       } else {
         throw new Error(res?.message || "Lỗi cập nhật");
       }
@@ -148,11 +148,10 @@ export default function StudentProfileForm() {
         value={value}
         onChange={readOnly ? undefined : handleChange}
         readOnly={readOnly}
-        className={`w-full border rounded-lg px-4 py-2.5 outline-none transition-all text-black ${
-          readOnly 
-            ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500" 
-            : "border-gray-300 focus:ring-2 focus:ring-black/20 focus:border-black"
-        }`}
+        className={`w-full border rounded-lg px-4 py-2.5 outline-none transition-all text-black ${readOnly
+          ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500"
+          : "border-gray-300 focus:ring-2 focus:ring-black/20 focus:border-black"
+          }`}
       />
     </div>
   );

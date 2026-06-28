@@ -42,25 +42,29 @@ export default function StudentDashboard() {
           <p className="text-label-md font-label-md text-on-surface-variant">Cổng học viên</p>
         </div>
         <nav className="flex-1 flex flex-col gap-2">
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-md transition-all duration-200 active:scale-95">
+          <Link href="/student/dashboard" className="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-md transition-all duration-200 active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>school</span>
             <span>Quản lý khóa học</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
+          <Link href="/student/courses/documents" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>folder_open</span>
             <span>Tài liệu</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
+          <Link href="/student/courses/quizzes" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>quiz</span>
             <span>Bài kiểm tra</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
+          <Link href="/student/schedules" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>calendar_month</span>
             <span>Lịch học</span>
           </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
+          <Link href="/student/courses/progress" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>insights</span>
-            <span>Báo cáo tiến độ</span>
+            <span>Tiến độ học tập</span>
+          </Link>
+          <Link href="/student/courses/learning-space" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>cast_for_education</span>
+            <span>Không gian học tập</span>
           </Link>
         </nav>
         <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-outline-variant">

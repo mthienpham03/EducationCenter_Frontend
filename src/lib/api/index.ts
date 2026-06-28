@@ -13,6 +13,7 @@ export {
   notificationService,
   reportService,
   courseService,
+  documentService,
   axiosClient,
 } from "./service";
 
