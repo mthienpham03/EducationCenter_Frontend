@@ -297,6 +297,12 @@ export const courseService = {
     const response = await axiosClient.get<ApiTypes.ApiResponse<any[]>>(`/courses/${courseId}/chapters`);
     return response.data;
   },
+
+  /** Chuyển lớp học viên (Admin) */
+  transferStudent: async (classId: string, studentId: string, data: { targetClassId: string; reason?: string; note?: string }): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(`/courses/classes/${classId}/students/${studentId}/transfer`, data);
+    return response.data;
+  },
 };
 
 export { documentService } from "./documents.api";
