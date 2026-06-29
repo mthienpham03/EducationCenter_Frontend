@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { documentService } from "@/lib/api/documents.api";
+import { documentService, courseService } from "@/lib/api/service";
 
 function getFileIcon(name: string) {
   const ext = name.split(".").pop()?.toLowerCase() || "";
@@ -41,6 +41,104 @@ export default function LecturerDocumentUploadPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [courses, setCourses] = useState<{ id: string; name: string }[]>([]);
+  const [uploadCourseId, setUploadCourseId] = useState("");
+  const [uploadChapterId, setUploadChapterId] = useState("");
+  const [uploadChapters, setUploadChapters] = useState<any[]>([]);
+  const [uploadLessons, setUploadLessons] = useState<any[]>([]);
+
+  const MOCK_COURSES_LIST = [
+    { id: "ielts-mastery", name: "IELTS Mastery (Standard Edition)" },
+    { id: "ielts-writing", name: "IELTS Writing Intensive" },
+    { id: "toeic-750", name: "TOEIC Target 750+" }
+  ];
+
+  // Load courses
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const res = await courseService.getCourses();
+        const localCoursesStr = localStorage.getItem("local_lecturer_courses");
+        const localCourses = localCoursesStr ? JSON.parse(localCoursesStr) : [];
+        const mappedLocal = localCourses.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+        }));
+
+        if (res.success && res.data && res.data.length > 0) {
+          const courseList = (res.data as unknown as { id: string; name: string }[]).map((c) => ({
+            id: c.id,
+            name: c.name,
+          }));
+          setCourses([...mappedLocal, ...courseList]);
+        } else {
+          setCourses([...mappedLocal, ...MOCK_COURSES_LIST]);
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách khóa học:", err);
+        const localCoursesStr = localStorage.getItem("local_lecturer_courses");
+        const localCourses = localCoursesStr ? JSON.parse(localCoursesStr) : [];
+        const mappedLocal = localCourses.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+        }));
+        setCourses([...mappedLocal, ...MOCK_COURSES_LIST]);
+      }
+    };
+    loadCourses();
+  }, []);
+
+  const handleCourseChange = async (courseId: string) => {
+    setUploadCourseId(courseId);
+    setUploadChapterId("");
+    setLessonId("");
+    setUploadChapters([]);
+    setUploadLessons([]);
+    if (!courseId) return;
+
+    if (["ielts-mastery", "ielts-writing", "toeic-750"].includes(courseId) || courseId.startsWith("local-course-")) {
+      setUploadChapters([
+        {
+          id: "chap-mock-1",
+          title: "Chương 1: Kiến thức nền tảng",
+          lessons: [
+            { id: "les-mock-1", title: "Bài 1.1: Giới thiệu khóa học & Phương pháp" },
+            { id: "les-mock-2", title: "Bài 1.2: Từ vựng và Cấu trúc câu quan trọng" }
+          ]
+        },
+        {
+          id: "chap-mock-2",
+          title: "Chương 2: Luyện tập chuyên sâu",
+          lessons: [
+            { id: "les-mock-3", title: "Bài 2.1: Kỹ năng phân tích đề bài" },
+            { id: "les-mock-4", title: "Bài 2.2: Thực hành làm bài mẫu" }
+          ]
+        }
+      ]);
+      return;
+    }
+
+    try {
+      const res = await courseService.getChaptersAndLessons(courseId);
+      if (res.success && res.data) {
+        setUploadChapters(res.data);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách chương học:", err);
+    }
+  };
+
+  const handleChapterChange = (chapterId: string) => {
+    setUploadChapterId(chapterId);
+    setLessonId("");
+    const selectedChapter = uploadChapters.find((ch) => ch.id === chapterId);
+    if (selectedChapter && selectedChapter.lessons) {
+      setUploadLessons(selectedChapter.lessons);
+    } else {
+      setUploadLessons([]);
+    }
+  };
+
   const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
   const handleDragLeave = useCallback(() => setIsDragging(false), []);
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -61,7 +159,7 @@ export default function LecturerDocumentUploadPage() {
 
   const handleUpload = async () => {
     if (files.length === 0 || !lessonId.trim()) {
-      setErrorMsg("Vui lòng chọn file và nhập ID bài học.");
+      setErrorMsg("Vui lòng chọn file và bài học liên kết.");
       return;
     }
 
@@ -78,13 +176,15 @@ export default function LecturerDocumentUploadPage() {
 
         setProgress(Math.round(((i + 0.3) / files.length) * 100));
 
-        await documentService.uploadDocument(file, {
-          lessonId: lessonId.trim(),
-          title: docTitle,
-          type: docType,
-          visibility,
-          status,
-        });
+        if (!lessonId.trim().startsWith("les-mock-")) {
+          await documentService.uploadDocument(file, {
+            lessonId: lessonId.trim(),
+            title: docTitle,
+            type: docType,
+            visibility,
+            status,
+          });
+        }
 
         uploaded++;
         setProgress(Math.round(((i + 1) / files.length) * 100));
@@ -92,9 +192,9 @@ export default function LecturerDocumentUploadPage() {
 
       setUploadedCount(uploaded);
       setIsDone(true);
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Upload failed:", err);
-      const msg = err instanceof Error ? err.message : "Upload thất bại. Vui lòng thử lại.";
+      const msg = err.response?.data?.message || err.message || "Upload thất bại. Vui lòng thử lại.";
       setErrorMsg(msg);
     } finally {
       setIsUploading(false);
@@ -106,6 +206,10 @@ export default function LecturerDocumentUploadPage() {
     setTitle("");
     setDescription("");
     setLessonId("");
+    setUploadCourseId("");
+    setUploadChapterId("");
+    setUploadChapters([]);
+    setUploadLessons([]);
     setTags("");
     setIsDone(false);
     setProgress(0);
@@ -274,18 +378,50 @@ export default function LecturerDocumentUploadPage() {
             </div>
 
             <div>
-              <label className="text-label-md font-semibold text-on-surface block mb-1.5">
-                ID Bài học (lessonId) <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                value={lessonId}
-                onChange={(e) => setLessonId(e.target.value)}
-                placeholder="Nhập UUID bài học..."
-                className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-              <p className="text-xs text-on-surface-variant mt-1">UUID bài học từ quản lý chương trình giảng dạy</p>
+              <label className="text-label-md font-semibold text-on-surface block mb-1.5">Khóa học <span className="text-error">*</span></label>
+              <select
+                value={uploadCourseId}
+                onChange={(e) => handleCourseChange(e.target.value)}
+                className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer transition-all"
+              >
+                <option value="">Chọn khóa học...</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </div>
+
+            {uploadCourseId && (
+              <div>
+                <label className="text-label-md font-semibold text-on-surface block mb-1.5">Chương học <span className="text-error">*</span></label>
+                <select
+                  value={uploadChapterId}
+                  onChange={(e) => handleChapterChange(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer transition-all"
+                >
+                  <option value="">Chọn chương học...</option>
+                  {uploadChapters.map((ch) => (
+                    <option key={ch.id} value={ch.id}>{ch.title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {uploadChapterId && (
+              <div>
+                <label className="text-label-md font-semibold text-on-surface block mb-1.5">Bài học <span className="text-error">*</span></label>
+                <select
+                  value={lessonId}
+                  onChange={(e) => setLessonId(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer transition-all"
+                >
+                  <option value="">Chọn bài học...</option>
+                  {uploadLessons.map((l) => (
+                    <option key={l.id} value={l.id}>{l.title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>

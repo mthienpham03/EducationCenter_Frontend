@@ -125,7 +125,7 @@ export const profileService = {
     const response = await axiosClient.get<ApiTypes.ApiResponse<ApiTypes.UserProfile>>("/profile");
     return response.data;
   },
-  updateProfile: async (data: ApiTypes.UpdateLecturerProfileRequest): Promise<ApiTypes.ApiResponse<ApiTypes.UserProfile>> => {
+  updateProfile: async (data: any): Promise<ApiTypes.ApiResponse<ApiTypes.UserProfile>> => {
     const response = await axiosClient.patch<ApiTypes.ApiResponse<ApiTypes.UserProfile>>("/profile", data);
     return response.data;
   },
@@ -291,6 +291,10 @@ export const courseService = {
   },
   removeStudent: async (classId: string, studentId: string): Promise<ApiTypes.ApiResponse> => {
     const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/classes/${classId}/students/${studentId}`);
+    return response.data;
+  },
+  getChaptersAndLessons: async (courseId: string): Promise<ApiTypes.ApiResponse<any[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any[]>>(`/courses/${courseId}/chapters`);
     return response.data;
   },
 };

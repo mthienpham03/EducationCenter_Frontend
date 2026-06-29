@@ -3,7 +3,7 @@
  * Kết nối với backend /api/v1/documents
  */
 
-import { axiosClient } from "./service";
+import { axiosClient } from "./axios";
 
 // Types
 export interface DocumentItem {

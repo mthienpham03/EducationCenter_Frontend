@@ -43,10 +43,10 @@ export default function SideNavBar() {
         })}
       </nav>
       <div className="mt-auto pt-stack-md">
-        <button className="w-full bg-secondary-container text-on-secondary-container font-label-md py-base px-stack-md rounded-lg flex items-center justify-center gap-base hover:opacity-90 transition-opacity mb-stack-md">
+        <Link href="/lecturer/courses" className="w-full bg-secondary-container text-on-secondary-container font-label-md py-base px-stack-md rounded-lg flex items-center justify-center gap-base hover:opacity-90 transition-opacity mb-stack-md">
           <span className="material-symbols-outlined">add</span>
           Khóa học mới
-        </button>
+        </Link>
         
         {/* Nút cài đặt hiển thị thông tin người dùng hiện tại */}
         <Link

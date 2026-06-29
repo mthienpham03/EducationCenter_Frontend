@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
+import { courseService } from "@/lib/api/service";
 
 export default function StudentDashboard() {
   const { user, logout } = useAuthStore();
@@ -11,9 +12,49 @@ export default function StudentDashboard() {
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const MOCK_COURSES = [
+    {
+      id: "uiux-mock",
+      code: "UI/UX",
+      name: "UI/UX Advanced: Master the Design System",
+      description: "Học cách thiết kế hệ thống Design System chuyên sâu trong Figma và nguyên lý UI/UX.",
+    },
+    {
+      id: "nextjs-mock",
+      code: "NEXTJS",
+      name: "Fullstack Web Development with Next.js",
+      description: "Xây dựng ứng dụng web hiện đại với React, Next.js App Router, TailwindCSS và Node.js.",
+    },
+    {
+      id: "marketing-mock",
+      code: "MARKETING",
+      name: "Digital Marketing & Growth Hacking",
+      description: "Chiến dịch marketing tăng trưởng, quảng cáo Google/Facebook ads chuyên nghiệp.",
+    }
+  ];
 
   useEffect(() => {
     setMounted(true);
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const res = await courseService.getCourses();
+        if (res.success && res.data && res.data.length > 0) {
+          setCourses(res.data);
+        } else {
+          setCourses(MOCK_COURSES);
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách khóa học, sử dụng dữ liệu mặc định:", err);
+        setCourses(MOCK_COURSES);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
   }, []);
 
   useEffect(() => {
@@ -207,93 +248,68 @@ export default function StudentDashboard() {
 
             {/* Course Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-gutter">
-              {/* Course Card 1 */}
-              <div className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/20 transition-all overflow-hidden flex flex-col md:flex-row h-full">
-                <div className="md:w-2/5 relative h-48 md:h-auto overflow-hidden">
-                  <img alt="UI/UX Design Course" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTwx0wIFX9LkNoW-poUrb8KAIv4VVO15Ul8gBOFIEwzF6K13rNjdDp0BwBkx8GbZUnbGzmpo5Lmv_CBxJNSB6Vncny6lLw-mDxWNfmWLsObxtv2wwDlywbtYaTvIfFz8ZXPo8poGyC_dou7DKs9Gg51KqimcdhSxcD0IE7_koqBYjB9TknFlX-Fy1vLucSkC8i7K3cfVmwpe3UKmmIQ_tqQuz-CJ1hrvcZG80L4JIzrgl_nLvgWG4CWy50Jhb6my--G72PPyWwTBvq" />
-                  <div className="absolute top-4 left-4 bg-primary px-3 py-1 rounded-full text-caption text-on-primary font-bold">Thiết kế</div>
+              {loading ? (
+                <div className="col-span-2 p-12 text-center bg-surface-container-lowest rounded-xl">
+                  <span className="material-symbols-outlined text-[48px] text-primary animate-spin block mb-3">progress_activity</span>
+                  <p className="text-on-surface-variant font-body-md">Đang tải danh sách khóa học...</p>
                 </div>
-                <div className="md:w-3/5 p-6 flex flex-col">
-                  <div className="mb-4">
-                    <h3 className="text-headline-md font-headline-md text-on-surface mb-2">UI/UX Advanced: Master the Design System</h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <img alt="Instructor" className="w-6 h-6 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGmhJuncd5iEBA3MjfgiDjC3mK6cwdhYnAyyje9ECBvnJVaDmYtspMfGrDQKiFmPSuJF9OoluDc8rpvYs_7i4ICIt3JtO0axYX8IGj3yfztrobsWi-NLnSnumTvDLUQgXuvCgVG72ctbB5Btq0UOL4c8ThFEX5MgIcHE5Ftcw33x2vd8kbqfgLfAX_ZtUrYlSLemh0sw45UnJEqzpvKxo8UMZc-9ROrgKwdzUTGICbvQbVaT5vpJGQAS34qCKUmBuKhpwq0r5Qt7pi" />
-                      <span className="text-label-md text-on-surface-variant">GV. Nguyễn Thành Nam</span>
-                    </div>
-                  </div>
-                  <div className="mt-auto">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-label-md text-on-surface-variant">Tiến độ</span>
-                      <span className="text-label-md font-bold text-primary">75%</span>
-                    </div>
-                    <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden mb-6">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '75%' }}></div>
-                    </div>
-                    <button className="w-full py-3 px-6 bg-primary text-on-primary rounded-xl font-label-md hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2">
-                      Vào học
-                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>arrow_forward</span>
-                    </button>
-                  </div>
+              ) : courses.length === 0 ? (
+                <div className="col-span-2 p-12 text-center bg-surface-container-lowest rounded-xl">
+                  <span className="material-symbols-outlined text-[48px] text-outline mb-3 block">search_off</span>
+                  <p className="text-on-surface-variant font-body-md">Bạn chưa đăng ký khóa học nào.</p>
                 </div>
-              </div>
-              {/* Course Card 2 */}
-              <div className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/20 transition-all overflow-hidden flex flex-col md:flex-row h-full">
-                <div className="md:w-2/5 relative h-48 md:h-auto overflow-hidden">
-                  <img alt="Fullstack Web Course" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbtLTkZfruv0WkYaGvK_5HvKKoqtkNXzvxXZQyL_8MO6F8IG3Q6a-c91vV9VDlz6fccLgAX5AY-GdrykMui8jRYRqDrXYAcU5B9xVTz8eMi1nROtLSL8f1MmNPKggOnDGztMpky_9rZZJALiUNBK1Qnt7E-u-59R5a-e--um0tHNWFJLAQZTXE7ZLcLUvOWHV-prtQd2Ked7-P9sk_IxxG6sSE2aLrsb7Eq3pXHNudDO-GJxhgb95TfwhAeW1v1_HGplZRzN2YY4oF" />
-                  <div className="absolute top-4 left-4 bg-secondary px-3 py-1 rounded-full text-caption text-on-primary font-bold">Lập trình</div>
-                </div>
-                <div className="md:w-3/5 p-6 flex flex-col">
-                  <div className="mb-4">
-                    <h3 className="text-headline-md font-headline-md text-on-surface mb-2">Fullstack Web Development with Next.js</h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <img alt="Instructor" className="w-6 h-6 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJw4dhDpWnjAOPsY97eEkrwsPeQ9ccN75TzG9Z8J7VKd4k8BQxBscObCPa_HDTcALdxFrDtsUftByaV8Azhg8Iq6vxA-n4vRionE11dkS4OIIT2g6wlFhMHvMBC_JdY03lahdOagNys8wDCoU9xqJNZ_Uz_T3tAf47OWK5gdanggvW87m9D4uwyqFfagpAsIvILUWKAdY6UrGSy556MqhjxDIcYH6XpThDgY72rFWbZiQ-U-4m4nSv7D4IX5YpPa79cZx1Yne3O9yo" />
-                      <span className="text-label-md text-on-surface-variant">GV. Trần Thị Mai</span>
+              ) : (
+                courses.map((course) => {
+                  const completedKey = `completed_lessons_${user?.id}_${course.id}`;
+                  let completedCount = 0;
+                  try {
+                    const completed = JSON.parse(localStorage.getItem(completedKey) || "[]");
+                    completedCount = completed.length;
+                  } catch {}
+
+                  let progress = 0;
+                  const totalLessons = course.id.endsWith("-mock") ? 6 : 12;
+                  if (completedCount > 0) {
+                    progress = Math.min(Math.round((completedCount / totalLessons) * 100), 100);
+                  } else {
+                    if (course.name.includes("UI/UX")) progress = 75;
+                    else if (course.name.includes("Next.js")) progress = 32;
+                  }
+
+                  return (
+                    <div key={course.id} className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/20 transition-all overflow-hidden flex flex-col md:flex-row h-full">
+                      <div className="md:w-2/5 relative h-48 md:h-auto overflow-hidden bg-primary-container/10 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[64px] text-primary/30">school</span>
+                        <div className="absolute top-4 left-4 bg-primary px-3 py-1 rounded-full text-caption text-on-primary font-bold">
+                          {course.code || "Course"}
+                        </div>
+                      </div>
+                      <div className="md:w-3/5 p-6 flex flex-col">
+                        <div className="mb-4">
+                          <h3 className="text-headline-md font-headline-md text-on-surface mb-2 line-clamp-2">{course.name}</h3>
+                          <p className="text-xs text-on-surface-variant line-clamp-2 mb-4">{course.description || "Chưa có mô tả cho khóa học này."}</p>
+                        </div>
+                        <div className="mt-auto">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-label-md text-on-surface-variant">Tiến độ</span>
+                            <span className="text-label-md font-bold text-primary">{progress}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden mb-6">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }}></div>
+                          </div>
+                          <button
+                            onClick={() => router.push(`/student/courses/learning-space?courseId=${course.id}`)}
+                            className="w-full py-3 px-6 bg-primary text-on-primary rounded-xl font-label-md hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2"
+                          >
+                            Vào học
+                            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>arrow_forward</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-auto">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-label-md text-on-surface-variant">Tiến độ</span>
-                      <span className="text-label-md font-bold text-primary">32%</span>
-                    </div>
-                    <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden mb-6">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '32%' }}></div>
-                    </div>
-                    <button className="w-full py-3 px-6 bg-primary text-on-primary rounded-xl font-label-md hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2">
-                      Vào học
-                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>arrow_forward</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {/* Course Card 3 (Coming Soon/Recently Started) */}
-              <div className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/20 transition-all overflow-hidden flex flex-col md:flex-row h-full">
-                <div className="md:w-2/5 relative h-48 md:h-auto overflow-hidden">
-                  <img alt="Digital Marketing" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAkZw1ahdZKuwH9mWccCpRAB2UqnBuI3YnlrY3Bvn9QFlm6_HBZVmVNivd04etqJCUurQrc2foT3qEtrLNKQ6XMBhSv5vwRcEmTLUVXRh7350ElkwWV9ASdv6EQBOhPzDpakhj4UrTyrXwpLtyyK4TNsmQux8gNakWZ0GiHtrta_pKmqLfkj_-BpwOFe8G39cdbrMs6ECcz2UJqYV95M02qnlLAHpUTe-yzJH3xUdPLy-plgsuH4yLGYnZSeuly2SqQVopC79UpS8j" />
-                  <div className="absolute top-4 left-4 bg-tertiary-container px-3 py-1 rounded-full text-caption text-on-primary font-bold">Tiếp thị</div>
-                </div>
-                <div className="md:w-3/5 p-6 flex flex-col">
-                  <div className="mb-4">
-                    <h3 className="text-headline-md font-headline-md text-on-surface mb-2">Digital Marketing & Growth Hacking</h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <img alt="Instructor" className="w-6 h-6 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZAyONUmJD1OpmG0nEich5dwZZkhq4es4ULcWTPTUGTWjdPh2JLgb0pp1SCiAGUvg4qixfsAPkFuTVS5j0Sj4wSRyX91V1hS5Qj_xU7vDo4LOsnoCLfyzy7zihYfbKoBVhGg9qz7-2w2Qb0MVXuPsptKaBDQk2gK-CHXpbnVr8yKQMCX-5YkeN0X68Z8ZbU0d6SYi8S4A08n3DaQLE7qwmtX_dHdWq-47XMQXBIZe8OMq9iiZjLz_V_sWjU7i_d_KWmis5elMdvr9F" />
-                      <span className="text-label-md text-on-surface-variant">GV. Lê Hoàng Anh</span>
-                    </div>
-                  </div>
-                  <div className="mt-auto">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-label-md text-on-surface-variant">Tiến độ</span>
-                      <span className="text-label-md font-bold text-primary">0%</span>
-                    </div>
-                    <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden mb-6">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '0%' }}></div>
-                    </div>
-                    <button className="w-full py-3 px-6 bg-primary text-on-primary rounded-xl font-label-md hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-2">
-                      Bắt đầu học
-                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>play_circle</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                  );
+                })
+              )}
               {/* Empty State / Placeholder for New Course */}
               <div className="group bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] border border-dashed border-outline-variant hover:border-primary transition-all overflow-hidden flex items-center justify-center min-h-[240px] cursor-pointer">
                 <div className="text-center p-8">

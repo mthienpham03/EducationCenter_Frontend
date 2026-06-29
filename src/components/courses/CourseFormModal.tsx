@@ -82,6 +82,55 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
         setError(res.message || "Đã có lỗi xảy ra");
       }
     } catch (err: any) {
+      const status = err?.response?.status;
+      const responseMessage = err?.response?.data?.message || "";
+      const isLocal = editingCourse && editingCourse.id.startsWith("local-course-");
+      if (status === 403 || responseMessage.includes("quyền") || responseMessage.includes("permission") || isLocal) {
+        // Lưu trữ tạm dưới LocalStorage cho giảng viên
+        try {
+          const existingStr = localStorage.getItem("local_lecturer_courses");
+          const existing = existingStr ? JSON.parse(existingStr) : [];
+
+          if (isEdit && editingCourse) {
+            const updated = existing.map((c: any) =>
+              c.id === editingCourse.id
+                ? {
+                    ...c,
+                    name: form.name,
+                    code: form.code,
+                    description: form.description,
+                    status: form.status,
+                    level: form.level,
+                    startDate: form.startDate,
+                    endDate: form.endDate,
+                    thumbnailUrl: form.thumbnailUrl,
+                  }
+                : c
+            );
+            localStorage.setItem("local_lecturer_courses", JSON.stringify(updated));
+            alert("Đã cập nhật thông tin khóa học mẫu dưới LocalStorage.");
+          } else {
+            const newLocalCourse = {
+              id: `local-course-${Date.now()}`,
+              name: form.name,
+              code: form.code,
+              description: form.description || "Khóa học vừa được tạo mẫu.",
+              status: form.status,
+              level: form.level || "Beginner",
+              startDate: form.startDate,
+              endDate: form.endDate,
+              thumbnailUrl: form.thumbnailUrl || "",
+            };
+            localStorage.setItem("local_lecturer_courses", JSON.stringify([newLocalCourse, ...existing]));
+            alert("Vì bạn đăng nhập bằng tài khoản Giảng viên (chỉ Admin mới có quyền tạo khóa học trên DB), hệ thống đã tạo và lưu khóa học này dưới dạng giả lập vào LocalStorage để bạn trình diễn giao diện.");
+          }
+          onSuccess();
+          onClose();
+          return;
+        } catch (localErr) {
+          console.error("Lỗi khi lưu khóa học local:", localErr);
+        }
+      }
       setError(err?.response?.data?.message || "Đã có lỗi xảy ra");
     } finally {
       setLoading(false);

@@ -42,7 +42,10 @@ export default function LecturerDocumentsPage() {
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadCourse, setUploadCourse] = useState("");
+  const [uploadCourseId, setUploadCourseId] = useState("");
+  const [uploadChapterId, setUploadChapterId] = useState("");
+  const [uploadChapters, setUploadChapters] = useState<any[]>([]);
+  const [uploadLessons, setUploadLessons] = useState<any[]>([]);
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
   const [uploadLessonId, setUploadLessonId] = useState("");
@@ -51,14 +54,83 @@ export default function LecturerDocumentsPage() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleUploadCourseChange = async (courseId: string) => {
+    setUploadCourseId(courseId);
+    setUploadChapterId("");
+    setUploadLessonId("");
+    setUploadChapters([]);
+    setUploadLessons([]);
+    if (!courseId) return;
+
+    if (["ielts-mastery", "ielts-writing", "toeic-750"].includes(courseId)) {
+      setUploadChapters([
+        {
+          id: "chap-mock-1",
+          title: "Chương 1: Kiến thức nền tảng",
+          lessons: [
+            { id: "les-mock-1", title: "Bài 1.1: Giới thiệu khóa học & Phương pháp" },
+            { id: "les-mock-2", title: "Bài 1.2: Từ vựng và Cấu trúc câu quan trọng" }
+          ]
+        },
+        {
+          id: "chap-mock-2",
+          title: "Chương 2: Luyện tập chuyên sâu",
+          lessons: [
+            { id: "les-mock-3", title: "Bài 2.1: Kỹ năng phân tích đề bài" },
+            { id: "les-mock-4", title: "Bài 2.2: Thực hành làm bài mẫu" }
+          ]
+        }
+      ]);
+      return;
+    }
+
+    try {
+      const res = await courseService.getChaptersAndLessons(courseId);
+      if (res.success && res.data) {
+        setUploadChapters(res.data);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách chương học:", err);
+    }
+  };
+
+  const handleUploadChapterChange = (chapterId: string) => {
+    setUploadChapterId(chapterId);
+    setUploadLessonId("");
+    const selectedChapter = uploadChapters.find((ch) => ch.id === chapterId);
+    if (selectedChapter && selectedChapter.lessons) {
+      setUploadLessons(selectedChapter.lessons);
+    } else {
+      setUploadLessons([]);
+    }
+  };
+
   // Load documents từ API
-  const loadDocuments = async () => {
+  const loadDocuments = async (courseId?: string) => {
     try {
       setLoading(true);
-      const res = await documentService.getDocuments();
-      if (res.success) {
-        setDocuments(res.data);
+      const params = courseId && courseId !== "Tất cả" ? { courseId } : undefined;
+      let apiDocs: DocumentItem[] = [];
+      try {
+        const res = await documentService.getDocuments(params);
+        if (res.success && res.data) {
+          apiDocs = res.data;
+        }
+      } catch (e) {
+        console.error("Lỗi khi tải tài liệu từ API:", e);
       }
+
+      const localDocsStr = localStorage.getItem("local_lecturer_docs");
+      const localDocs: DocumentItem[] = localDocsStr ? JSON.parse(localDocsStr) : [];
+
+      let filteredLocal = localDocs;
+      if (courseId && courseId !== "Tất cả") {
+        filteredLocal = localDocs.filter(
+          (d) => d.lessonId === courseId || d.lesson?.title?.includes(courseId)
+        );
+      }
+
+      setDocuments([...filteredLocal, ...apiDocs]);
     } catch (err) {
       console.error("Lỗi khi tải danh sách tài liệu:", err);
     } finally {
@@ -70,20 +142,50 @@ export default function LecturerDocumentsPage() {
   const loadCourses = async () => {
     try {
       const res = await courseService.getCourses();
-      if (res.success && res.data) {
+      
+      const localCoursesStr = localStorage.getItem("local_lecturer_courses");
+      const localCourses = localCoursesStr ? JSON.parse(localCoursesStr) : [];
+      const mappedLocal = localCourses.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+      }));
+
+      if (res.success && res.data && res.data.length > 0) {
         const courseList = (res.data as unknown as { id: string; name: string }[]).map((c) => ({
           id: c.id,
           name: c.name,
         }));
-        setCourses(courseList);
+        setCourses([...mappedLocal, ...courseList]);
+      } else {
+        setCourses([
+          ...mappedLocal,
+          { id: "ielts-mastery", name: "IELTS Mastery (Standard Edition)" },
+          { id: "ielts-writing", name: "IELTS Writing Intensive" },
+          { id: "toeic-750", name: "TOEIC Target 750+" }
+        ]);
       }
     } catch (err) {
       console.error("Lỗi khi tải danh sách khóa học:", err);
+      const localCoursesStr = localStorage.getItem("local_lecturer_courses");
+      const localCourses = localCoursesStr ? JSON.parse(localCoursesStr) : [];
+      const mappedLocal = localCourses.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+      }));
+      setCourses([
+        ...mappedLocal,
+        { id: "ielts-mastery", name: "IELTS Mastery (Standard Edition)" },
+        { id: "ielts-writing", name: "IELTS Writing Intensive" },
+        { id: "toeic-750", name: "TOEIC Target 750+" }
+      ]);
     }
   };
 
   useEffect(() => {
-    loadDocuments();
+    loadDocuments(selectedCourse === "Tất cả" ? undefined : selectedCourse);
+  }, [selectedCourse]);
+
+  useEffect(() => {
     loadCourses();
   }, []);
 
@@ -116,11 +218,16 @@ export default function LecturerDocumentsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await documentService.deleteDocument(id);
-      if (res.success) {
-        setDocuments((prev) => prev.filter((d) => d.id !== id));
-        showToast("Xóa tài liệu thành công!");
+      if (id.startsWith("local-doc-")) {
+        const existingLocalStr = localStorage.getItem("local_lecturer_docs");
+        const existingLocal: DocumentItem[] = existingLocalStr ? JSON.parse(existingLocalStr) : [];
+        const updated = existingLocal.filter((d) => d.id !== id);
+        localStorage.setItem("local_lecturer_docs", JSON.stringify(updated));
+      } else {
+        await documentService.deleteDocument(id);
       }
+      setDocuments((prev) => prev.filter((d) => d.id !== id));
+      showToast("Xóa tài liệu thành công!");
     } catch (err) {
       console.error("Lỗi khi xóa tài liệu:", err);
       showToast("Xóa tài liệu thất bại!");
@@ -157,13 +264,36 @@ export default function LecturerDocumentsPage() {
 
         setUploadProgress(Math.round(((i + 0.5) / uploadFiles.length) * 100));
 
-        await documentService.uploadDocument(file, {
+        if (!uploadLessonId.startsWith("les-mock-")) {
+          await documentService.uploadDocument(file, {
+            lessonId: uploadLessonId,
+            title,
+            type,
+            visibility: "enrolled_only",
+            status: uploadStatus,
+          });
+        }
+
+        // Tạo tài liệu giả lập và lưu vào LocalStorage
+        const selectedChap = uploadChapters.find((ch) => ch.id === uploadChapterId);
+        const selectedLes = uploadLessons.find((l) => l.id === uploadLessonId);
+        const newDoc: DocumentItem = {
+          id: `local-doc-${Date.now()}-${i}`,
           lessonId: uploadLessonId,
           title,
           type,
+          fileUrl: "#",
           visibility: "enrolled_only",
           status: uploadStatus,
-        });
+          owner: { id: "user-1", fullName: "Giảng viên EduCenter", email: "lecturer@educenter.com" },
+          lesson: { id: uploadLessonId, title: selectedLes ? `${selectedChap?.title || ''} - ${selectedLes.title}` : "Bài học" },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const existingLocalStr = localStorage.getItem("local_lecturer_docs");
+        const existingLocal: DocumentItem[] = existingLocalStr ? JSON.parse(existingLocalStr) : [];
+        localStorage.setItem("local_lecturer_docs", JSON.stringify([newDoc, ...existingLocal]));
 
         setUploadProgress(Math.round(((i + 1) / uploadFiles.length) * 100));
       }
@@ -174,7 +304,7 @@ export default function LecturerDocumentsPage() {
       setUploadTitle("");
       setUploadDesc("");
       setUploadLessonId("");
-      await loadDocuments();
+      await loadDocuments(selectedCourse === "Tất cả" ? undefined : selectedCourse);
     } catch (err) {
       console.error("Lỗi upload:", err);
       showToast("Upload thất bại! Kiểm tra lại thông tin.");
@@ -292,7 +422,10 @@ export default function LecturerDocumentsPage() {
               onChange={(e) => setSelectedCourse(e.target.value)}
               className="px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer"
             >
-              <option value="Tất cả">Tất cả</option>
+              <option value="Tất cả">Tất cả khóa học</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -305,7 +438,7 @@ export default function LecturerDocumentsPage() {
             Danh sách tài liệu
             <span className="ml-2 text-sm font-normal text-on-surface-variant">({filteredDocs.length} tài liệu)</span>
           </h3>
-          <button onClick={loadDocuments} className="p-2 hover:bg-surface-container-low rounded-lg transition-all text-on-surface-variant" title="Tải lại">
+          <button onClick={() => loadDocuments(selectedCourse === "Tất cả" ? undefined : selectedCourse)} className="p-2 hover:bg-surface-container-low rounded-lg transition-all text-on-surface-variant" title="Tải lại">
             <span className="material-symbols-outlined text-[20px]">refresh</span>
           </button>
         </div>
@@ -494,16 +627,48 @@ export default function LecturerDocumentsPage() {
                 />
               </div>
               <div>
-                <label className="text-label-md font-semibold text-on-surface block mb-1">ID Bài học (lessonId) <span className="text-error">*</span></label>
-                <input
-                  type="text"
-                  value={uploadLessonId}
-                  onChange={(e) => setUploadLessonId(e.target.value)}
-                  placeholder="Nhập UUID bài học..."
-                  className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-                <p className="text-xs text-on-surface-variant mt-1">Lấy từ danh sách bài học trong quản lý chương trình</p>
+                <label className="text-label-md font-semibold text-on-surface block mb-1">Khóa học <span className="text-error">*</span></label>
+                <select
+                  value={uploadCourseId}
+                  onChange={(e) => handleUploadCourseChange(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer"
+                >
+                  <option value="">Chọn khóa học...</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
+              {uploadCourseId && (
+                <div>
+                  <label className="text-label-md font-semibold text-on-surface block mb-1">Chương học <span className="text-error">*</span></label>
+                  <select
+                    value={uploadChapterId}
+                    onChange={(e) => handleUploadChapterChange(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer"
+                  >
+                    <option value="">Chọn chương học...</option>
+                    {uploadChapters.map((ch) => (
+                      <option key={ch.id} value={ch.id}>{ch.title}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {uploadChapterId && (
+                <div>
+                  <label className="text-label-md font-semibold text-on-surface block mb-1">Bài học <span className="text-error">*</span></label>
+                  <select
+                    value={uploadLessonId}
+                    onChange={(e) => setUploadLessonId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer"
+                  >
+                    <option value="">Chọn bài học...</option>
+                    {uploadLessons.map((l) => (
+                      <option key={l.id} value={l.id}>{l.title}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="text-label-md font-semibold text-on-surface block mb-1">Trạng thái</label>
                 <select

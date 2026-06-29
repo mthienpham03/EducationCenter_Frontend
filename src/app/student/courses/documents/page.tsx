@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/auth.store";
-import { documentService, type DocumentItem } from "@/lib/api/documents.api";
+import { documentService, courseService } from "@/lib/api/service";
+import { type DocumentItem } from "@/lib/api/documents.api";
 
 function getFileIcon(type: string) {
   if (type === "pdf") return { icon: "picture_as_pdf", color: "text-red-600", bg: "bg-red-50", label: "PDF" };
@@ -22,13 +23,16 @@ export default function StudentDocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("Tất cả");
+  const [selectedCourse, setSelectedCourse] = useState("Tất cả");
+  const [courses, setCourses] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Load documents từ API
-  const loadDocuments = async () => {
+  const loadDocuments = async (courseId?: string) => {
     try {
       setLoading(true);
-      const res = await documentService.getDocuments();
+      const params = courseId && courseId !== "Tất cả" ? { courseId } : undefined;
+      const res = await documentService.getDocuments(params);
       if (res.success) {
         setDocuments(res.data);
       }
@@ -39,8 +43,23 @@ export default function StudentDocumentsPage() {
     }
   };
 
+  const loadCourses = async () => {
+    try {
+      const res = await courseService.getCourses();
+      if (res.success && res.data) {
+        setCourses(res.data);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách khóa học:", err);
+    }
+  };
+
   useEffect(() => {
-    loadDocuments();
+    loadDocuments(selectedCourse === "Tất cả" ? undefined : selectedCourse);
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    loadCourses();
   }, []);
 
   // Filter
@@ -147,6 +166,12 @@ export default function StudentDocumentsPage() {
                   />
                 </div>
                 <div className="flex gap-3 flex-wrap items-center">
+                  <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)} className="px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer">
+                    <option value="Tất cả">Tất cả khóa học</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                   <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer">
                     {FILE_TYPES.map((t) => <option key={t} value={t}>{t === "Tất cả" ? "Loại file" : t}</option>)}
                   </select>
