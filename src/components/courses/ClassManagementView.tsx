@@ -9,15 +9,19 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Link from "next/link";
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-surface-container-highest text-on-surface-variant",
-  published: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
-  archived: "bg-secondary-fixed text-on-secondary-fixed-variant",
+  scheduled: "bg-surface-container-highest text-on-surface-variant",
+  active: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
+  on_hold: "bg-[#ffdbca] text-[#5c2400]",
+  completed: "bg-primary-fixed text-primary",
+  cancelled: "bg-error-container text-error",
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: "Nháp",
-  published: "Đang học",
-  archived: "Lưu trữ",
+  scheduled: "Đã lên lịch",
+  active: "Đang học",
+  on_hold: "Tạm dừng",
+  completed: "Đã kết thúc",
+  cancelled: "Đã hủy",
 };
 
 type ActiveModal = null | "createClass" | "editClass";

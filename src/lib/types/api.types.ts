@@ -230,7 +230,7 @@ export interface CreateNotificationRequest {
 // ============================================================================
 
 export type CourseStatus = "draft" | "published" | "archived";
-export type ClassStatus = "draft" | "published" | "archived";
+export type ClassStatus = "scheduled" | "active" | "on_hold" | "completed" | "cancelled";
 export type EnrollmentStatus = "active" | "transferred" | "completed" | "cancelled";
 
 export interface Course {
@@ -279,6 +279,9 @@ export interface ClassEntity {
   name: string;
   maxStudents?: number | null;
   status: ClassStatus;
+  expectedStartDate?: string | null;
+  expectedEndDate?: string | null;
+  scheduleNote?: string | null;
   createdBy?: string | null;
   updatedBy?: string | null;
   createdAt: string;
@@ -292,12 +295,18 @@ export interface CreateClassRequest {
   name: string;
   maxStudents?: number;
   status?: ClassStatus;
+  expectedStartDate?: string;
+  expectedEndDate?: string;
+  scheduleNote?: string;
 }
 
 export interface UpdateClassRequest {
   name?: string;
   maxStudents?: number;
   status?: ClassStatus;
+  expectedStartDate?: string;
+  expectedEndDate?: string;
+  scheduleNote?: string;
 }
 
 export interface TeachingAssignment {

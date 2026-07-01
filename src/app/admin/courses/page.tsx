@@ -12,7 +12,7 @@ import Link from "next/link";
 
 const STATUS_PILL: Record<CourseStatus, { bg: string; text: string; label: string }> = {
   draft:     { bg: "#edeeef", text: "#434654", label: "Nháp" },
-  published: { bg: "#6ffbbe", text: "#002113", label: "Đang xuất bản" },
+  published: { bg: "#6ffbbe", text: "#002113", label: "Đang diễn ra" },
   archived:  { bg: "#ffdbca", text: "#5c2400", label: "Lưu trữ" },
 };
 
@@ -144,7 +144,7 @@ export default function AdminCoursesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Tổng khóa học", value: stats.total, icon: "library_books", bg: "bg-primary-fixed", color: "text-primary" },
-          { label: "Đang xuất bản", value: stats.published, icon: "play_circle", bg: "bg-tertiary-fixed", color: "text-tertiary" },
+          { label: "Đang diễn ra", value: stats.published, icon: "play_circle", bg: "bg-tertiary-fixed", color: "text-tertiary" },
           { label: "Nháp", value: stats.draft, icon: "edit_note", bg: "bg-surface-container-high", color: "text-on-surface-variant" },
           { label: "Lưu trữ", value: stats.archived, icon: "archive", bg: "bg-secondary-fixed", color: "text-secondary" },
         ].map((s) => (
@@ -220,7 +220,7 @@ export default function AdminCoursesPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low">
-                  {["Khóa học", "Cấp độ", "Thời gian", "Trạng thái", "Lớp học", ""].map((h) => (
+                  {["Khóa học", "Thời gian", "Trạng thái", "Lớp học", ""].map((h) => (
                     <th
                       key={h}
                       className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap"
@@ -255,16 +255,6 @@ export default function AdminCoursesPage() {
                         </div>
                       </td>
 
-                      {/* Level */}
-                      <td className="px-6 py-4">
-                        {course.level ? (
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${LEVEL_COLORS[course.level] || "bg-surface-container text-on-surface-variant"}`}>
-                            {course.level}
-                          </span>
-                        ) : (
-                          <span className="text-on-surface-variant text-xs">—</span>
-                        )}
-                      </td>
 
                       {/* Date range */}
                       <td className="px-6 py-4 whitespace-nowrap">
