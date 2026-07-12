@@ -24,16 +24,16 @@ export default function AdminQuizResultsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [quizRes, attemptsRes] = await Promise.all([
-        quizService.getQuizById(quizId),
-        quizService.getAttemptsByQuiz(quizId),
-      ]);
+      const quizRes = await quizService.getQuizById(quizId);
 
       if (quizRes.success) {
         setQuiz(quizRes.data);
       }
-      if (attemptsRes.success) {
-        setAttempts(attemptsRes.data || []);
+
+      // Nhánh này yêu cầu studentId để lấy lịch sử → để trống khi admin xem tổng quan
+      const attemptsRes = await quizService.getAttemptHistory(quizId).catch(() => null);
+      if (attemptsRes && attemptsRes.success && attemptsRes.data) {
+        setAttempts(attemptsRes.data.attempts || []);
       }
     } catch (err) {
       console.error("Lỗi khi tải báo cáo bài thi:", err);
@@ -203,7 +203,7 @@ export default function AdminQuizResultsPage() {
                   <p className="mt-3 text-3xl font-black text-green-600">{highestScore} / 10.0</p>
                 </div>
                 <div className="bg-white border border-[#bbe7ff] p-5 rounded-3xl shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Tỷ lệ đạt (>= 5.0)</p>
+                  <p className="text-sm font-medium text-slate-500">Tỷ lệ đạt (&gt;= 5.0)</p>
                   <p className="mt-3 text-3xl font-black text-amber-500">{passRate}%</p>
                 </div>
               </div>
@@ -235,7 +235,7 @@ export default function AdminQuizResultsPage() {
                       </thead>
                       <tbody className="divide-y divide-[#bbe7ff]/50">
                         {attempts.map((attempt) => (
-                          <tr key={attempt.id} className="transition hover:bg-[#f8feff]">
+                          <tr key={attempt.attemptId} className="transition hover:bg-[#f8feff]">
                             <td className="px-4 py-4 text-slate-900 font-medium">
                               {attempt.student?.studentProfile?.studentCode || "—"}
                             </td>
@@ -263,7 +263,7 @@ export default function AdminQuizResultsPage() {
                             <td className="px-4 py-4 text-right">
                               {attempt.submittedAt ? (
                                 <button
-                                  onClick={() => router.push(`/admin/quizzes/attempt/${attempt.id}`)}
+                                  onClick={() => router.push(`/admin/quizzes/attempt/${attempt.attemptId}?quizId=${quizId}`)}
                                   className="px-4 py-2 border border-[#bbe7ff] text-[#0369a1] hover:bg-[#d6f1ff] rounded-xl text-xs font-semibold transition-all"
                                 >
                                   Xem bài làm

@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { quizService } from "@/lib/api/service";
 
-export default function AdminStudentAttemptDetailsPage() {
+function AdminStudentAttemptDetailsContent() {
+
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const { attemptId } = useParams() as { attemptId: string };
+  const searchParams = useSearchParams();
+  const quizId = searchParams.get("quizId") || "";
 
   const [mounted, setMounted] = useState(false);
   const [attempt, setAttempt] = useState<any>(null);
@@ -22,11 +25,16 @@ export default function AdminStudentAttemptDetailsPage() {
   }, []);
 
   const loadAttemptDetails = async () => {
+    if (!quizId) {
+      router.push("/admin/quizzes");
+      return;
+    }
     try {
       setLoading(true);
-      const res = await quizService.getAttemptDetails(attemptId);
+      const res = await quizService.getAttemptDetails(quizId, attemptId);
       if (res.success && res.data) {
-        setAttempt(res.data.attempt);
+        // Backend returns flat: { attemptId, attemptNo, startedAt, submittedAt, totalScore, answers }
+        setAttempt(res.data);
         setAnswers(res.data.answers || []);
       }
     } catch (err: any) {
@@ -42,7 +50,7 @@ export default function AdminStudentAttemptDetailsPage() {
     if (mounted && attemptId) {
       loadAttemptDetails();
     }
-  }, [mounted, attemptId]);
+  }, [mounted, attemptId, quizId]);
 
   if (!mounted) return null;
 
@@ -225,14 +233,14 @@ export default function AdminStudentAttemptDetailsPage() {
                             {isCorrect ? "Đúng" : "Sai"}
                           </span>
                           <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1 rounded-full border border-slate-200">
-                            {ans.scoreObtained} / {ans.maxScore} điểm
+                            {ans.score} điểm
                           </span>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 gap-3">
                         {ans.options.map((opt: any) => {
-                          const isSelected = ans.selectedOptionIds.includes(opt.id);
+                          const isSelected = (ans.answerData || []).includes(opt.id);
                           const isOptCorrect = opt.isCorrect;
 
                           let containerClass = "bg-white border-slate-200 text-slate-700";
@@ -288,7 +296,7 @@ export default function AdminStudentAttemptDetailsPage() {
 
               <div className="pt-6 pb-12 flex justify-center">
                 <button
-                  onClick={() => router.push(`/admin/quizzes/${attempt.quiz?.id}`)}
+                  onClick={() => router.push(`/admin/quizzes/${quizId}`)}
                   className="px-8 py-3 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all active:scale-[0.98]"
                 >
                   Quay lại danh sách kết quả
@@ -299,5 +307,18 @@ export default function AdminStudentAttemptDetailsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AdminStudentAttemptDetailsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <span className="material-symbols-outlined text-[48px] text-[#0288d1] animate-spin mb-3">progress_activity</span>
+        <p className="text-slate-500">Đang tải chi tiết bài làm...</p>
+      </div>
+    }>
+      <AdminStudentAttemptDetailsContent />
+    </Suspense>
   );
 }

@@ -26,16 +26,14 @@ export default function StudentQuizDetailPage() {
       setLoading(true);
       const [quizRes, attemptsRes] = await Promise.all([
         quizService.getQuizById(quizId),
-        quizService.getStudentAttempts(),
+        quizService.getAttemptHistory(quizId),
       ]);
 
       if (quizRes.success) {
         setQuiz(quizRes.data);
       }
-      if (attemptsRes.success) {
-        // Lọc lượt thi của đề thi này
-        const filtered = (attemptsRes.data || []).filter((a: any) => a.quizId === quizId);
-        setAttempts(filtered);
+      if (attemptsRes.success && attemptsRes.data) {
+        setAttempts(attemptsRes.data.attempts || []);
       }
     } catch (err) {
       console.error("Lỗi khi tải thông tin chi tiết bài thi:", err);
@@ -272,7 +270,7 @@ export default function StudentQuizDetailPage() {
                         </thead>
                         <tbody className="divide-y divide-outline-variant/20">
                           {attempts.map((attempt) => (
-                            <tr key={attempt.id} className="transition hover:bg-surface-container-low/40">
+                            <tr key={attempt.attemptId} className="transition hover:bg-surface-container-low/40">
                               <td className="px-4 py-4 font-semibold text-on-surface">Lần {attempt.attemptNo}</td>
                               <td className="px-4 py-4 text-on-surface-variant">{formatDate(attempt.startedAt)}</td>
                               <td className="px-4 py-4 text-on-surface-variant">{formatDate(attempt.submittedAt)}</td>
@@ -293,14 +291,14 @@ export default function StudentQuizDetailPage() {
                               <td className="px-4 py-4 text-right">
                                 {attempt.submittedAt ? (
                                   <button
-                                    onClick={() => router.push(`/student/courses/quizzes/attempt/${attempt.id}`)}
+                                    onClick={() => router.push(`/student/courses/quizzes/attempt/${attempt.attemptId}?quizId=${quizId}`)}
                                     className="px-3 py-1.5 border border-primary/20 text-primary hover:bg-primary/5 rounded-lg text-xs font-semibold transition-all"
                                   >
                                     Chi tiết
                                   </button>
                                 ) : (
                                   <button
-                                    onClick={() => router.push(`/student/courses/quizzes/${quizId}/take?attemptId=${attempt.id}`)}
+                                    onClick={() => router.push(`/student/courses/quizzes/${quizId}/take?attemptId=${attempt.attemptId}`)}
                                     className="px-3 py-1.5 bg-amber-500 text-white hover:bg-amber-600 rounded-lg text-xs font-semibold transition-all"
                                   >
                                     Làm tiếp

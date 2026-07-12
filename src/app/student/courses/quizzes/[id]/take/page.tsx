@@ -38,30 +38,23 @@ function TakeQuizContent() {
 
     try {
       setLoading(true);
-      const [quizRes, questionsRes, attemptDetailsRes] = await Promise.all([
+      const [quizRes, attemptStartRes] = await Promise.all([
         quizService.getQuizById(quizId),
-        quizService.getQuizQuestions(quizId),
-        quizService.getAttemptDetails(attemptId),
+        quizService.startAttempt(quizId),
       ]);
 
       if (quizRes.success) {
         setQuiz(quizRes.data);
       }
-      if (questionsRes.success) {
-        setQuestions(questionsRes.data || []);
-      }
 
-      if (attemptDetailsRes.success && quizRes.success) {
-        const attempt = attemptDetailsRes.data.attempt;
-        if (attempt.submittedAt) {
-          alert("Lượt thi này đã nộp trước đó!");
-          router.push(`/student/courses/quizzes/attempt/${attemptId}`);
-          return;
-        }
+      if (attemptStartRes.success && attemptStartRes.data) {
+        const attemptData = attemptStartRes.data;
+        setQuestions(attemptData.questions || []);
 
         // Tính thời gian còn lại dựa trên startedAt và durationMinutes
-        const startedTime = new Date(attempt.startedAt).getTime();
-        const durationMs = quizRes.data.durationMinutes * 60 * 1000;
+        const startedTime = new Date(attemptData.startedAt).getTime();
+        const durationMinutes = attemptData.durationMinutes || (quizRes.success ? quizRes.data.durationMinutes : 15);
+        const durationMs = durationMinutes * 60 * 1000;
         const endTime = startedTime + durationMs;
         const remainingSecs = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
         
@@ -135,13 +128,13 @@ function TakeQuizContent() {
       // Chuyển cấu trúc answers thành định dạng API
       const formattedAnswers = questions.map((q) => ({
         questionId: q.questionId,
-        selectedOptionIds: answers[q.questionId] || [],
+        answerData: answers[q.questionId] || [],
       }));
 
-      const res = await quizService.submitAttempt(attemptId!, formattedAnswers);
+      const res = await quizService.submitAttempt(quizId, attemptId!, formattedAnswers);
       if (res.success) {
         alert("Đã nộp bài thi thành công!");
-        router.push(`/student/courses/quizzes/attempt/${attemptId}`);
+        router.push(`/student/courses/quizzes/attempt/${attemptId}?quizId=${quizId}`);
       } else {
         alert(res.message || "Lỗi khi nộp bài thi");
       }

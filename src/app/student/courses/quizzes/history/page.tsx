@@ -20,10 +20,38 @@ export default function StudentQuizHistoryPage() {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const res = await quizService.getStudentAttempts();
-      if (res.success) {
-        setAttempts(res.data || []);
-      }
+      // Tải danh sách quiz trước
+      const quizRes = await quizService.getQuizzes();
+      if (!quizRes.success) return;
+
+      const quizzesData = quizRes.data || [];
+
+      // Tải lịch sử từng quiz song song
+      const allAttemptsRes = await Promise.all(
+        quizzesData.map((q: any) =>
+          quizService.getAttemptHistory(q.id).catch(() => null)
+        )
+      );
+
+      // Gộp và đính kèm thông tin quiz vào từng attempt
+      const flat = allAttemptsRes
+        .filter((res) => res && res.success && res.data)
+        .flatMap((res: any) => {
+          const quiz = quizzesData.find((q: any) => q.id === res.data.quizId);
+          return (res.data.attempts || []).map((a: any) => ({
+            ...a,
+            quizId: res.data.quizId,
+            quizTitle: res.data.quizTitle,
+            quiz,
+          }));
+        });
+
+      // Sắp xếp mới nhất trước
+      flat.sort((a: any, b: any) =>
+        new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+      );
+
+      setAttempts(flat);
     } catch (err) {
       console.error("Lỗi khi tải lịch sử làm bài:", err);
     } finally {
@@ -149,15 +177,15 @@ export default function StudentQuizHistoryPage() {
                     </thead>
                     <tbody className="divide-y divide-outline-variant/20">
                       {attempts.map((attempt) => (
-                        <tr key={attempt.id} className="transition hover:bg-surface-container-low/40">
-                          <td className="px-4 py-4 font-bold text-on-surface">{attempt.quiz?.title}</td>
-                          <td className="px-4 py-4 text-on-surface-variant">{attempt.quiz?.course?.name}</td>
+                        <tr key={attempt.attemptId} className="transition hover:bg-surface-container-low/40">
+                          <td className="px-4 py-4 font-bold text-on-surface">{attempt.quizTitle || attempt.quiz?.title}</td>
+                          <td className="px-4 py-4 text-on-surface-variant">{attempt.quiz?.course?.name || "—"}</td>
                           <td className="px-4 py-4 text-center text-on-surface font-semibold">Lần {attempt.attemptNo}</td>
                           <td className="px-4 py-4 text-on-surface-variant">{formatDate(attempt.submittedAt)}</td>
                           <td className="px-4 py-4 text-center">
                             {attempt.submittedAt ? (
                               <span className="font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full text-xs">
-                                {attempt.totalScore} / 10.0
+                                {attempt.totalScore} / điểm
                               </span>
                             ) : (
                               <span className="font-medium text-amber-600 bg-amber-500/10 px-2.5 py-1 rounded-full text-xs">
@@ -168,14 +196,14 @@ export default function StudentQuizHistoryPage() {
                           <td className="px-4 py-4 text-right">
                             {attempt.submittedAt ? (
                               <button
-                                onClick={() => router.push(`/student/courses/quizzes/attempt/${attempt.id}`)}
+                                onClick={() => router.push(`/student/courses/quizzes/attempt/${attempt.attemptId}?quizId=${attempt.quizId}`)}
                                 className="px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-semibold hover:opacity-95 transition-all"
                               >
                                 Xem kết quả
                               </button>
                             ) : (
                               <button
-                                onClick={() => router.push(`/student/courses/quizzes/${attempt.quizId}/take?attemptId=${attempt.id}`)}
+                                onClick={() => router.push(`/student/courses/quizzes/${attempt.quizId}/take?attemptId=${attempt.attemptId}`)}
                                 className="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-semibold hover:opacity-95 transition-all"
                               >
                                 Làm tiếp

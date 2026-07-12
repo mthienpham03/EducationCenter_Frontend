@@ -21,16 +21,28 @@ export default function StudentQuizzesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [quizRes, attemptRes] = await Promise.all([
-        quizService.getQuizzes(),
-        quizService.getStudentAttempts(),
-      ]);
+      const quizRes = await quizService.getQuizzes();
 
       if (quizRes.success) {
-        setQuizzes(quizRes.data || []);
-      }
-      if (attemptRes.success) {
-        setAttempts(attemptRes.data || []);
+        const quizzesData = quizRes.data || [];
+        setQuizzes(quizzesData);
+
+        // Tải lịch sử làm bài cho từng quiz song song
+        const allAttemptsRes = await Promise.all(
+          quizzesData.map((q) =>
+            quizService.getAttemptHistory(q.id).catch(() => null)
+          )
+        );
+
+        const allAttempts = allAttemptsRes
+          .filter((res) => res && res.success && res.data)
+          .flatMap((res: any) =>
+            (res.data.attempts || []).map((a: any) => ({
+              ...a,
+              quizId: res.data.quizId,
+            }))
+          );
+        setAttempts(allAttempts);
       }
     } catch (err) {
       console.error("Lỗi khi tải danh sách bài thi:", err);
