@@ -305,6 +305,41 @@ export const courseService = {
   },
 };
 
+export const quizService = {
+  getQuizzes: async (params?: { courseId?: string }): Promise<ApiTypes.ApiResponse<any[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any[]>>("/quizzes", { params });
+    return response.data;
+  },
+  getQuizById: async (id: string): Promise<ApiTypes.ApiResponse<any>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any>>(`/quizzes/${id}`);
+    return response.data;
+  },
+  getQuizQuestions: async (id: string): Promise<ApiTypes.ApiResponse<any[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any[]>>(`/quizzes/${id}/questions`);
+    return response.data;
+  },
+  getStudentAttempts: async (params?: { quizId?: string }): Promise<ApiTypes.ApiResponse<any[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any[]>>("/quizzes/attempts/my", { params });
+    return response.data;
+  },
+  getAttemptDetails: async (attemptId: string): Promise<ApiTypes.ApiResponse<any>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any>>(`/quizzes/attempts/${attemptId}`);
+    return response.data;
+  },
+  getAttemptsByQuiz: async (quizId: string): Promise<ApiTypes.ApiResponse<any[]>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any[]>>(`/quizzes/${quizId}/attempts`);
+    return response.data;
+  },
+  startAttempt: async (quizId: string): Promise<ApiTypes.ApiResponse<any>> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<any>>(`/quizzes/${quizId}/attempts`);
+    return response.data;
+  },
+  submitAttempt: async (attemptId: string, answers: { questionId: string; selectedOptionIds: string[] }[]): Promise<ApiTypes.ApiResponse<any>> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<any>>(`/quizzes/attempts/${attemptId}/submit`, { answers });
+    return response.data;
+  },
+};
+
 export { documentService } from "./documents.api";
 
 export const api = {
@@ -317,6 +352,7 @@ export const api = {
   report: reportService,
   course: courseService,
   document: documentService,
+  quiz: quizService,
   client: axiosClient,
 };
 
