@@ -155,7 +155,7 @@ export default function ClassManagementView({ courseId }: { courseId: string }) 
           <div>
             <p className="text-on-surface-variant text-xs font-medium">Đang học</p>
             <p className="font-headline-xl text-headline-xl text-on-surface leading-none mt-0.5">
-              {classes.filter((c) => c.status === "published").length}
+              {classes.filter((c) => c.status === "active").length}
             </p>
           </div>
         </div>
