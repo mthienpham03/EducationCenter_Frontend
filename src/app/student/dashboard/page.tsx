@@ -34,137 +34,24 @@ export default function StudentDashboard() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-surface-bright text-on-surface min-h-screen flex font-body-md">
-      {/* SideNavBar Shell */}
-      <aside className="h-full w-72 fixed left-0 top-0 flex flex-col p-stack-md bg-surface-container-lowest shadow-sm border-r border-outline-variant z-50 overflow-y-auto">
-        <div className="mb-10">
-          <h1 className="text-headline-md font-headline-md font-bold text-primary">EduCenter</h1>
-          <p className="text-label-md font-label-md text-on-surface-variant">Cổng học viên</p>
+    <>
+      {/* Header Section */}
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-headline-lg font-headline-lg text-on-surface mb-2">Khóa học của tôi</h2>
+          <p className="text-body-md text-on-surface-variant">Chào mừng trở lại, {user?.fullName || "Học viên"}! Bạn có <span className="font-bold text-primary">3 khóa học</span> đang diễn ra.</p>
         </div>
-        <nav className="flex-1 flex flex-col gap-2">
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-md transition-all duration-200 active:scale-95">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>school</span>
-            <span>Quản lý khóa học</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>folder_open</span>
-            <span>Tài liệu</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>quiz</span>
-            <span>Bài kiểm tra</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>calendar_month</span>
-            <span>Lịch học</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md active:scale-95">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>insights</span>
-            <span>Báo cáo tiến độ</span>
-          </Link>
-        </nav>
-        <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-outline-variant">
-          <button className="w-full mb-4 py-3 px-4 bg-secondary text-on-secondary rounded-xl font-label-md hover:opacity-90 transition-all">
-            Xem tất cả lớp học
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md hover:bg-surface-container transition-all">
+            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>filter_list</span>
+            Lọc
           </button>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg font-label-md">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>settings</span>
-            <span>Cài đặt</span>
-          </Link>
-          <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-error hover:bg-error-container transition-all rounded-lg font-label-md">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>logout</span>
-            <span>Đăng xuất</span>
+          <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md hover:bg-surface-container transition-all">
+            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>sort</span>
+            Sắp xếp
           </button>
         </div>
-      </aside>
-
-      {/* Main Container to offset the sidebar */}
-      <div className="flex-1 ml-72 flex flex-col">
-        {/* TopAppBar Shell */}
-        <header className="sticky top-0 w-full z-40 flex justify-between items-center px-margin-desktop py-4 bg-surface shadow-sm">
-          <div className="flex items-center gap-8">
-            <div className="hidden lg:flex gap-6">
-              <Link href="#" className="text-primary border-b-2 border-primary pb-1 font-label-md transition-all duration-200">Bảng điều khiển</Link>
-              <Link href="#" className="text-on-surface-variant hover:text-primary transition-colors font-label-md">Thông báo</Link>
-              <Link href="#" className="text-on-surface-variant hover:text-primary transition-colors font-label-md">Hỗ trợ</Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
-              <input className="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-body-md focus:outline-none focus:border-primary w-64" placeholder="Tìm kiếm khóa học..." type="text" />
-            </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md hover:bg-primary-container transition-all">
-              Đăng ký khóa học mới
-            </button>
-            <div className="flex items-center gap-2 ml-2 relative" ref={menuRef}>
-              <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
-              </button>
-              <div>
-                <div
-                  className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed block cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpen((v) => !v);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') setMenuOpen((v) => !v); }}
-                >
-                  <img alt="Student Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLxSvFFnD38POG-dZL5EQp_pCSg2ISQ7fkCvAqjgZqJond2dPcMwfRiN25amGDce-Kqhw7fRX3tHuACbMPwMYOYgY64ooJlMWyb7M4S_ia154_pKI6ZUGGDStHnKPhcdH883U3URo740ybGOWwlqkjUQ3O0AEF5e0OPL4f0Sk8F_G57KGZIqasZt-odhsA0lAa4aLg9a6Ncu2BcuhfqAnzmSOh2O3lrsnUf8xak1blLSY0yhRxgQoytSVxnW87Ln483I3KvM9hNefB" />
-                </div>
-                {menuOpen && (
-                  <div className="absolute right-0 top-12 w-44 bg-white shadow-md border border-outline-variant rounded-lg flex flex-col overflow-hidden z-50">
-                    <div className="p-3 border-b border-outline-variant">
-                      <p className="font-bold text-sm truncate">{user?.fullName}</p>
-                      <p className="text-xs text-on-surface-variant truncate">{user?.email}</p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(false);
-                        window.dispatchEvent(new CustomEvent('open-profile-panel'));
-                      }}
-                      className="flex items-center gap-2 p-3 hover:bg-surface-container-low text-sm text-left w-full text-left"
-                    >
-                      <span className="material-symbols-outlined text-sm">person</span>
-                      Hồ sơ
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); handleLogout(); }}
-                      className="flex items-center gap-2 p-3 text-error hover:bg-error-container/20 text-sm text-left"
-                    >
-                      <span className="material-symbols-outlined text-sm">logout</span>
-                      Đăng xuất
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content Canvas */}
-        <main className="p-margin-desktop bg-surface-bright flex-1">
-          <div className="max-w-container-max mx-auto">
-            {/* Header Section */}
-            <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <h2 className="text-headline-lg font-headline-lg text-on-surface mb-2">Khóa học của tôi</h2>
-                <p className="text-body-md text-on-surface-variant">Chào mừng trở lại, {user?.fullName || "Học viên"}! Bạn có <span className="font-bold text-primary">3 khóa học</span> đang diễn ra.</p>
-              </div>
-              <div className="flex gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md hover:bg-surface-container transition-all">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>filter_list</span>
-                  Lọc
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md hover:bg-surface-container transition-all">
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>sort</span>
-                  Sắp xếp
-                </button>
-              </div>
-            </div>
+      </div>
 
             {/* Bento Grid Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-10">
@@ -374,14 +261,11 @@ export default function StudentDashboard() {
               <p className="text-body-lg italic text-on-surface mb-2">"Chào Minh, tiến độ học tập của bạn rất ấn tượng. Hãy tiếp tục duy trì và đừng ngần ngại đặt câu hỏi trong mục Quizzes nhé!"</p>
               <p className="text-label-md font-bold text-primary">— Cố vấn học tập Minh Anh</p>
             </div>
-          </div>
-        </main>
-      </div>
 
       {/* FAB */}
       <button className="fixed bottom-8 right-8 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
       </button>
-    </div>
+    </>
   );
 }

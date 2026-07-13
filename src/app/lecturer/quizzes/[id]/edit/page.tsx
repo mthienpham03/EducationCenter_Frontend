@@ -1,32 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter, useParams } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { quizApi } from "@/lib/api/quiz.api";
 import QuizForm from "@/components/features/quizzes/QuizForm";
 import Link from "next/link";
 
-export default function CreateQuizPage() {
+export default function EditQuizPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
   const queryClient = useQueryClient();
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const { data: response, isLoading, isError } = useQuery({
+    queryKey: ["quiz", id],
+    queryFn: () => quizApi.getQuizById(id),
+  });
+
+  const quiz = response?.data;
+
   const mutation = useMutation({
-    mutationFn: (data: any) => quizApi.createQuiz(data),
-    onSuccess: (res) => {
+    mutationFn: (data: any) => quizApi.updateQuiz(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quiz", id] });
       queryClient.invalidateQueries({ queryKey: ["quizzes"] });
-      setSuccessMsg("Tạo bài kiểm tra thành công! Đang chuyển hướng...");
-      // Chuyển hướng tới trang thêm câu hỏi
-      setTimeout(() => {
-        router.push(`/lecturer/quizzes/${res?.data?.id}/questions`);
-      }, 1500);
+      setSuccessMsg("Cập nhật bài kiểm tra thành công!");
+      setTimeout(() => setSuccessMsg(null), 3000);
     },
     onError: (err: any) => {
-      setErrorMsg(err?.response?.data?.message || "Đã xảy ra lỗi khi tạo bài kiểm tra.");
+      setErrorMsg(err?.response?.data?.message || "Đã xảy ra lỗi khi cập nhật bài kiểm tra.");
     }
   });
+
+  if (isLoading) return <div className="p-10 text-center text-on-surface-variant">Đang tải thông tin...</div>;
+  if (isError || !quiz) return <div className="p-10 text-center text-error">Không tìm thấy bài kiểm tra.</div>;
 
   return (
     <div className="max-w-container-md mx-auto p-stack-md space-y-stack-md">
@@ -37,10 +47,10 @@ export default function CreateQuizPage() {
             Quản lý Bài kiểm tra
           </Link>
           <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-          <span>Tạo mới</span>
+          <span>Chỉnh sửa cấu hình</span>
         </div>
-        <h1 className="font-headline-lg text-headline-lg text-on-surface">Tạo bài kiểm tra mới</h1>
-        <p className="text-on-surface-variant">Thiết lập cấu hình cho bài kiểm tra của bạn.</p>
+        <h1 className="font-headline-lg text-headline-lg text-on-surface">Sửa cấu hình bài kiểm tra</h1>
+        <p className="text-on-surface-variant">Cập nhật thiết lập cho bài kiểm tra của bạn.</p>
       </div>
 
       {successMsg && (
@@ -58,6 +68,7 @@ export default function CreateQuizPage() {
       )}
 
       <QuizForm
+        initialData={quiz}
         onSubmit={(data) => {
           setErrorMsg(null);
           mutation.mutate(data);
