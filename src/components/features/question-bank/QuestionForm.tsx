@@ -10,7 +10,7 @@ import { api } from "@/lib/api/service";
 const optionSchema = z.object({
   id: z.string().optional(),
   content: z.string().min(1, "Vui lòng nhập nội dung đáp án"),
-  isCorrect: z.boolean(),
+  isCorrect: z.any().transform(v => v === true || v === "true" || v === "on"),
   orderIndex: z.number(),
 });
 
