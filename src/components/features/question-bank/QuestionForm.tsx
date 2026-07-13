@@ -10,7 +10,7 @@ import { api } from "@/lib/api/service";
 const optionSchema = z.object({
   id: z.string().optional(),
   content: z.string().min(1, "Vui lòng nhập nội dung đáp án"),
-  isCorrect: z.any().transform(v => v === true || v === "true" || v === "on"),
+  isCorrect: z.boolean(),
   orderIndex: z.number(),
 });
 
@@ -183,7 +183,7 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
               <div className="flex flex-col items-center gap-1 shrink-0 px-2 mt-2">
                 <label className="text-caption text-on-surface-variant">Đáp án đúng</label>
                 <input 
-                  type={questionType === QuestionTypeEnum.MCQ_SINGLE || questionType === QuestionTypeEnum.TRUE_FALSE ? "radio" : "checkbox"} 
+                  type="checkbox"
                   {...form.register(`options.${index}.isCorrect`)}
                   className="w-5 h-5 accent-primary cursor-pointer"
                   // Handling radio logic for single correct answer manually via react-hook-form could be tricky, 
@@ -227,14 +227,6 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
         </button>
       </div>
       
-      {/* Debug validation errors */}
-      {Object.keys(form.formState.errors).length > 0 && (
-        <div className="p-4 bg-error-container text-on-error-container rounded-lg mt-4 text-sm font-mono whitespace-pre-wrap">
-          Validation Errors Debug:
-          {JSON.stringify(form.formState.errors, null, 2)}
-        </div>
-      )}
-
     </form>
   );
 }
