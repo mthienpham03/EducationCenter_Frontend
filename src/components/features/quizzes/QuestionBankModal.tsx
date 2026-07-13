@@ -10,9 +10,10 @@ interface QuestionBankModalProps {
   onClose: () => void;
   onAdd: (selectedQuestionIds: string[]) => void;
   existingQuestionIds: string[];
+  courseId?: string;
 }
 
-export default function QuestionBankModal({ isOpen, onClose, onAdd, existingQuestionIds }: QuestionBankModalProps) {
+export default function QuestionBankModal({ isOpen, onClose, onAdd, existingQuestionIds, courseId }: QuestionBankModalProps) {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -25,8 +26,12 @@ export default function QuestionBankModal({ isOpen, onClose, onAdd, existingQues
   const questions = response?.data || [];
 
   const availableQuestions = useMemo(() => {
-    return questions.filter(q => !existingQuestionIds.includes(q.id) && q.content.toLowerCase().includes(search.toLowerCase()));
-  }, [questions, existingQuestionIds, search]);
+    return questions.filter(q => 
+      !existingQuestionIds.includes(q.id) && 
+      q.content.toLowerCase().includes(search.toLowerCase()) &&
+      (!courseId || q.courseId === courseId)
+    );
+  }, [questions, existingQuestionIds, search, courseId]);
 
   const handleToggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);

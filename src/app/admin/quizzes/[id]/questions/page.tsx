@@ -26,7 +26,7 @@ export default function QuizQuestionsPage() {
     queryKey: ["quiz-questions", id],
     queryFn: () => quizApi.getQuizQuestions(id),
   });
-  const quizQuestions = questionsRes?.data || [];
+  const quizQuestions = questionsRes?.data?.questions || [];
 
   const addMutation = useMutation({
     mutationFn: (questionIds: string[]) => {
@@ -50,7 +50,7 @@ export default function QuizQuestionsPage() {
     }
   });
 
-  const existingIds = quizQuestions.map(q => q.questionId);
+  const existingIds = quizQuestions.map((q: any) => q.questionId);
 
   const getQuestionTypeLabel = (type: string) => {
     switch (type) {
@@ -90,7 +90,7 @@ export default function QuizQuestionsPage() {
       <div className="bg-white rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
         <div className="p-5 border-b border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between bg-surface-container-lowest">
           <h2 className="font-headline-sm text-on-surface">Danh sách câu hỏi trong đề ({quizQuestions.length})</h2>
-          <div className="text-sm text-on-surface-variant">Tổng điểm dự kiến: <span className="font-bold text-primary">{quizQuestions.reduce((acc, q) => acc + Number(q.score || 0), 0)}</span></div>
+          <div className="text-sm text-on-surface-variant">Tổng điểm dự kiến: <span className="font-bold text-primary">{quizQuestions.reduce((acc: number, q: any) => acc + Number(q.score || 0), 0)}</span></div>
         </div>
 
         <div className="overflow-x-auto">
@@ -117,19 +117,18 @@ export default function QuizQuestionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
-                {quizQuestions.map((q, index) => {
-                  const question = q.question;
+                {quizQuestions.map((q: any, index: number) => {
                   return (
-                    <tr key={q.id} className="hover:bg-surface-container-lowest transition-colors group">
+                    <tr key={q.questionId} className="hover:bg-surface-container-lowest transition-colors group">
                       <td className="px-4 py-4 text-center font-medium text-on-surface-variant">{index + 1}</td>
                       <td className="px-4 py-4 max-w-[400px]">
-                        <p className="font-medium text-on-surface text-sm line-clamp-2" title={question?.content}>
-                          {question?.content || "Câu hỏi không khả dụng"}
+                        <p className="font-medium text-on-surface text-sm line-clamp-2" title={q.content}>
+                          {q.content || "Câu hỏi không khả dụng"}
                         </p>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <span className="inline-flex bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded text-xs font-semibold">
-                          {getQuestionTypeLabel(question?.questionType)}
+                          {getQuestionTypeLabel(q.questionType)}
                         </span>
                       </td>
                       <td className="px-4 py-4 text-center font-bold text-primary">
@@ -160,6 +159,7 @@ export default function QuizQuestionsPage() {
         onClose={() => setIsModalOpen(false)}
         existingQuestionIds={existingIds}
         onAdd={(ids) => addMutation.mutate(ids)}
+        courseId={quiz?.courseId}
       />
 
       <ConfirmDialog

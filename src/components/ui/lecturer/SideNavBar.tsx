@@ -13,7 +13,6 @@ export default function SideNavBar() {
     { name: "Chấm điểm & Nhận xét", icon: "grading", path: "/lecturer/grading" },
     { name: "Ngân hàng câu hỏi", icon: "database", path: "/lecturer/question-bank" },
     { name: "Bài kiểm tra", icon: "quiz", path: "/lecturer/quizzes" },
-    { name: "Lịch học", icon: "event", path: "/lecturer/schedules" },
   ];
 
   return (
