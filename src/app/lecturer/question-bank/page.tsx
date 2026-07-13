@@ -72,53 +72,69 @@ export default function QuestionBankPage() {
           Chưa có câu hỏi nào. Hãy tạo mới!
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-          {questions.map((question) => (
-            <div
-              key={question.id}
-              className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between hover:shadow-[0_8px_35px_rgba(0,0,0,0.06)] hover:border-primary/20 transition-all"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className="w-10 h-10 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center">
-                    <span className="material-symbols-outlined">help_center</span>
-                  </span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-caption font-semibold ${
-                      question.status === "active"
-                        ? "bg-green-500/10 text-green-600"
-                        : "bg-yellow-500/10 text-yellow-600"
-                    }`}
+        <div className="space-y-10">
+          {Object.entries(
+            questions.reduce((acc, q) => {
+              const courseName = (q.course as any)?.title || (q.course as any)?.name || "Khóa học chung (Chưa phân loại)";
+              if (!acc[courseName]) acc[courseName] = [];
+              acc[courseName].push(q);
+              return acc;
+            }, {} as Record<string, typeof questions>)
+          ).map(([courseName, courseQuestions]) => (
+            <div key={courseName} className="space-y-4">
+              <h2 className="font-headline-sm text-primary border-b border-outline-variant/30 pb-2">
+                {courseName} <span className="text-on-surface-variant text-sm font-normal">({courseQuestions.length} câu)</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+                {courseQuestions.map((question) => (
+                  <div
+                    key={question.id}
+                    className="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between hover:shadow-[0_8px_35px_rgba(0,0,0,0.06)] hover:border-primary/20 transition-all"
                   >
-                    {question.status === "active" ? "Đang hoạt động" : "Bản nháp"}
-                  </span>
-                </div>
-                <h3 className="font-headline-md text-lg text-on-surface font-semibold line-clamp-2">
-                  {question.content}
-                </h3>
-                <div className="text-caption text-on-surface-variant mt-2 flex flex-wrap gap-2">
-                  <span className="bg-surface-container-high px-2 py-1 rounded-md">
-                    {getQuestionTypeLabel(question.questionType)}
-                  </span>
-                  <span className="bg-surface-container-high px-2 py-1 rounded-md">
-                    Mức độ: {question.difficulty}
-                  </span>
-                </div>
-              </div>
+                    <div>
+                      <div className="flex justify-between items-start mb-3">
+                        <span className="w-10 h-10 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center">
+                          <span className="material-symbols-outlined">help_center</span>
+                        </span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-caption font-semibold ${
+                            question.status === "active"
+                              ? "bg-green-500/10 text-green-600"
+                              : "bg-yellow-500/10 text-yellow-600"
+                          }`}
+                        >
+                          {question.status === "active" ? "Đang hoạt động" : "Bản nháp"}
+                        </span>
+                      </div>
+                      <h3 className="font-headline-md text-lg text-on-surface font-semibold line-clamp-2" title={question.content}>
+                        {question.content}
+                      </h3>
+                      <div className="text-caption text-on-surface-variant mt-2 flex flex-wrap gap-2">
+                        <span className="bg-surface-container-high px-2 py-1 rounded-md">
+                          {getQuestionTypeLabel(question.questionType)}
+                        </span>
+                        <span className="bg-surface-container-high px-2 py-1 rounded-md">
+                          Mức độ: {question.difficulty}
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="pt-4 mt-4 flex gap-2 border-t border-outline-variant/20 justify-end">
-                <Link
-                  href={`/lecturer/question-bank/${question.id}/edit`}
-                  className="text-caption font-semibold text-primary hover:underline flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-sm">edit</span> Sửa
-                </Link>
-                <button
-                  onClick={() => setDeleteId(question.id)}
-                  className="text-caption font-semibold text-error hover:underline flex items-center gap-1 ml-4"
-                >
-                  <span className="material-symbols-outlined text-sm">delete</span> Xóa
-                </button>
+                    <div className="pt-4 mt-4 flex gap-2 border-t border-outline-variant/20 justify-end">
+                      <Link
+                        href={`/lecturer/question-bank/${question.id}/edit`}
+                        className="text-caption font-semibold text-primary hover:underline flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-sm">edit</span> Sửa
+                      </Link>
+                      <button
+                        onClick={() => setDeleteId(question.id)}
+                        className="text-caption font-semibold text-error hover:underline flex items-center gap-1 ml-4"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span> Xóa
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
