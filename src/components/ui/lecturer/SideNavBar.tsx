@@ -11,6 +11,7 @@ export default function SideNavBar() {
     { name: "Khóa học", icon: "library_books", path: "/lecturer/courses" },
     { name: "Tài liệu", icon: "description", path: "/lecturer/documents" },
     { name: "Bài kiểm tra", icon: "quiz", path: "/lecturer/quizzes" },
+    { name: "Ngân hàng câu hỏi", icon: "database", path: "/lecturer/question-bank" },
     { name: "Lịch học", icon: "event", path: "/lecturer/schedules" },
   ];
 
