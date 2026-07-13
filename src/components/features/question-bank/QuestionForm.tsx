@@ -11,7 +11,7 @@ const optionSchema = z.object({
   id: z.string().optional(),
   content: z.string().min(1, "Vui lòng nhập nội dung đáp án"),
   isCorrect: z.boolean(),
-  orderIndex: z.coerce.number(),
+  orderIndex: z.number(),
 });
 
 const formSchema = z.object({
