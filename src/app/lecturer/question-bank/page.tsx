@@ -155,9 +155,9 @@ export default function QuestionBankPage() {
               className="px-3 py-2 bg-surface-container rounded-lg border border-outline-variant/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">Tất cả Mức độ</option>
-              <option value="Easy">Dễ</option>
-              <option value="Medium">Trung bình</option>
-              <option value="Hard">Khó</option>
+              <option value="Dễ">Dễ</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Khó">Khó</option>
             </select>
           </div>
           
