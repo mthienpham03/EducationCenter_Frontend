@@ -84,8 +84,12 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
     }
   }, [questionType, form]);
 
+  const onError = (errors: any) => {
+    console.log("Validation Errors:", errors);
+  };
+
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-stack-lg max-w-4xl mx-auto bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-sm border border-outline-variant/50">
+    <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-stack-lg max-w-4xl mx-auto bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-sm border border-outline-variant/50">
       
       {/* 1. Thông tin cơ bản */}
       <div className="space-y-stack-md">
@@ -149,9 +153,9 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
           )}
         </div>
 
-        {form.formState.errors.options?.root && (
+        {(form.formState.errors.options?.root?.message || (form.formState.errors.options as any)?.message) && (
           <div className="bg-error-container text-on-error-container p-3 rounded-lg text-sm">
-            {form.formState.errors.options.root.message}
+            {form.formState.errors.options?.root?.message || (form.formState.errors.options as any)?.message}
           </div>
         )}
 
@@ -169,6 +173,8 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
                   className="p-3 bg-surface-container-low rounded-lg border border-outline-variant focus:border-primary outline-none"
                   readOnly={questionType === QuestionTypeEnum.TRUE_FALSE}
                 />
+                <input type="hidden" {...form.register(`options.${index}.id`)} />
+                <input type="hidden" {...form.register(`options.${index}.orderIndex`, { valueAsNumber: true })} />
                 {form.formState.errors.options?.[index]?.content && (
                   <span className="text-error text-caption">{form.formState.errors.options[index]?.content?.message}</span>
                 )}
@@ -220,6 +226,14 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
           {isLoading ? "Đang lưu..." : "Lưu Câu Hỏi"}
         </button>
       </div>
+      
+      {/* Debug validation errors */}
+      {Object.keys(form.formState.errors).length > 0 && (
+        <div className="p-4 bg-error-container text-on-error-container rounded-lg mt-4 text-sm font-mono whitespace-pre-wrap">
+          Validation Errors Debug:
+          {JSON.stringify(form.formState.errors, null, 2)}
+        </div>
+      )}
 
     </form>
   );
