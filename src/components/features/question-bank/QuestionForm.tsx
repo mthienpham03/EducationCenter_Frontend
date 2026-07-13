@@ -85,7 +85,7 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
   }, [questionType, form]);
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-stack-lg max-w-4xl mx-auto bg-surface-container-lowest p-stack-xl rounded-2xl shadow-sm border border-outline-variant/50">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-stack-lg max-w-4xl mx-auto bg-surface-container-lowest p-6 md:p-8 rounded-2xl shadow-sm border border-outline-variant/50">
       
       {/* 1. Thông tin cơ bản */}
       <div className="space-y-stack-md">
