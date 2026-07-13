@@ -11,7 +11,7 @@ const optionSchema = z.object({
   id: z.string().optional(),
   content: z.string().min(1, "Vui lòng nhập nội dung đáp án"),
   isCorrect: z.boolean(),
-  orderIndex: z.number(),
+  orderIndex: z.coerce.number(),
 });
 
 const formSchema = z.object({
@@ -227,6 +227,22 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
         </button>
       </div>
       
+      {/* Debug validation errors (Safe) */}
+      {Object.keys(form.formState.errors).length > 0 && (
+        <div className="p-4 bg-error-container text-on-error-container rounded-lg mt-4 text-sm font-mono whitespace-pre-wrap">
+          Lỗi dữ liệu (Debug): 
+          {JSON.stringify(
+            Object.fromEntries(
+              Object.entries(form.formState.errors).map(([k, v]) => [
+                k, 
+                v?.message || (v as any)?.root?.message || "Invalid field data"
+              ])
+            ),
+            null, 2
+          )}
+        </div>
+      )}
+
     </form>
   );
 }
