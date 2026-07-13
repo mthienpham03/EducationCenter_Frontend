@@ -69,7 +69,7 @@ export default function QuestionForm({ initialData, onSubmit, isLoading }: Quest
     // Fetch courses for dropdown
     api.course.getCourses().then(res => {
       if (res.success && res.data) {
-        setCourses(res.data.map(c => ({ id: c.id, title: c.title })));
+        setCourses(res.data.map(c => ({ id: c.id, title: c.name })));
       }
     }).catch(console.error);
   }, []);
