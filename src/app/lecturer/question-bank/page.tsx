@@ -128,13 +128,13 @@ export default function QuestionBankPage() {
       {/* Xóa Modal */}
       <ConfirmDialog
         isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
+        onCancel={() => setDeleteId(null)}
         onConfirm={handleDelete}
         title="Xóa câu hỏi?"
         message="Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa câu hỏi này không?"
         confirmText={deleteMutation.isPending ? "Đang xóa..." : "Xóa"}
         cancelText="Hủy"
-        type="danger"
+        isDestructive={true}
       />
     </div>
   );
