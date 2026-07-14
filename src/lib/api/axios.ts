@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/auth.store";
 export const axiosClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json; charset=utf-8",
   },
 });
 
