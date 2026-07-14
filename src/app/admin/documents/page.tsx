@@ -21,7 +21,7 @@ export default function AdminDocumentsPage() {
   // Form states
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
-  const [visibility, setVisibility] = useState('restricted');
+  const [visibility, setVisibility] = useState('enrolled');
   const [status, setStatus] = useState('draft');
   const [changeNote, setChangeNote] = useState('');
   
@@ -180,7 +180,7 @@ export default function AdminDocumentsPage() {
   const resetForm = () => {
     setFile(null);
     setTitle('');
-    setVisibility('restricted');
+    setVisibility('enrolled');
     setStatus('draft');
     setLessonId('');
     setSelectedCourseId('');
@@ -361,21 +361,22 @@ export default function AdminDocumentsPage() {
                     className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
                   >
                     <option value="draft">Nháp (Draft)</option>
-                    <option value="published">Xuất bản (Published)</option>
-                    <option value="restricted">Hạn chế (Restricted)</option>
+                    <option value="published">Đã xuất bản (Published)</option>
+                    <option value="restricted">Bị giới hạn (Restricted)</option>
                     <option value="archived">Lưu trữ (Archived)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-label-md font-bold text-on-surface mb-2">Quyền hiển thị</label>
+                  <label className="block text-label-md font-bold text-on-surface mb-2">Phạm vi hiển thị</label>
                   <select 
                     value={visibility}
                     onChange={(e) => setVisibility(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
                   >
-                    <option value="restricted">Chỉ dành cho học viên tham gia</option>
                     <option value="public">Công khai (Public)</option>
+                    <option value="enrolled">Học viên khóa học (Enrolled)</option>
+                    <option value="restricted">Giới hạn danh sách (Restricted)</option>
                   </select>
                 </div>
               </div>
