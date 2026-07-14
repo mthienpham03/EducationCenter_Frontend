@@ -357,7 +357,15 @@ export default function AdminDocumentsPage() {
                   <label className="block text-label-md font-bold text-on-surface mb-2">Trạng thái</label>
                   <select 
                     value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      setStatus(newStatus);
+                      if (newStatus !== 'published') {
+                        setVisibility('restricted');
+                      } else {
+                        setVisibility('enrolled');
+                      }
+                    }}
                     className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
                   >
                     <option value="draft">Nháp (Draft)</option>
@@ -372,7 +380,8 @@ export default function AdminDocumentsPage() {
                   <select 
                     value={visibility}
                     onChange={(e) => setVisibility(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
+                    disabled={status !== 'published'}
+                    className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface disabled:opacity-50 disabled:bg-surface-container"
                   >
                     <option value="public">Công khai (Public)</option>
                     <option value="enrolled">Học viên khóa học (Enrolled)</option>
