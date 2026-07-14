@@ -276,7 +276,7 @@ export default function AdminCourseCurriculum() {
                     </button>
                   </div>
                   <div>
-                    <h3 className="font-title-md font-bold text-on-surface">Chương {chapterIdx + 1}: {chapter.title}</h3>
+                    <h3 className="font-title-md font-bold text-on-surface">{chapter.title}</h3>
                     {chapter.description && <p className="text-sm text-on-surface-variant mt-1 line-clamp-2">{chapter.description}</p>}
                   </div>
                 </div>
@@ -334,7 +334,7 @@ export default function AdminCourseCurriculum() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-body-md font-semibold text-on-surface">Bài {lessonIdx + 1}: {lesson.title}</span>
+                            <span className="font-body-md font-semibold text-on-surface">{lesson.title}</span>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${lesson.status === 'published' ? 'bg-success/10 text-success' : 'bg-outline-variant/30 text-on-surface-variant'}`}>
                               {lesson.status === 'published' ? 'Đã xuất bản' : 'Nháp'}
                             </span>
