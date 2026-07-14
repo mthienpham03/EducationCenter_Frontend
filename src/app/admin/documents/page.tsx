@@ -92,9 +92,17 @@ export default function AdminDocumentsPage() {
   };
 
   useEffect(() => {
-    fetchDocuments();
     fetchCourses();
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchDocuments();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterSearch, filterCourseId, filterChapterId, filterStatus]);
 
   useEffect(() => {
     if (selectedCourseId) {
@@ -305,7 +313,7 @@ export default function AdminDocumentsPage() {
                 {filterChapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
             </div>
-            <div className="flex gap-2">
+            <div>
               <select 
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -317,13 +325,6 @@ export default function AdminDocumentsPage() {
                 <option value="restricted">Bị giới hạn</option>
                 <option value="archived">Lưu trữ</option>
               </select>
-              <button 
-                onClick={() => fetchDocuments()}
-                className="bg-primary text-on-primary px-4 py-2 rounded-lg hover:opacity-90 flex items-center justify-center"
-                title="Lọc"
-              >
-                <span className="material-symbols-outlined text-sm">search</span>
-              </button>
             </div>
           </div>
         </div>
