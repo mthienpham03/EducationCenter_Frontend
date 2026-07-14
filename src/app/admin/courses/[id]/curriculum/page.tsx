@@ -16,6 +16,9 @@ export default function AdminCourseCurriculum() {
   const [course, setCourse] = useState<any>(null);
   const [chapters, setChapters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // UI states
+  const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
 
   // Modals state
   const [isChapterModalOpen, setIsChapterModalOpen] = useState(false);
@@ -105,6 +108,13 @@ export default function AdminCourseCurriculum() {
     setConfirmTitle(`Bạn có chắc muốn xóa chương "${chapter.title}" và tất cả bài học bên trong?`);
     setConfirmAction(() => () => deleteChapter(chapter.id));
     setIsConfirmOpen(true);
+  };
+
+  const toggleChapter = (chapterId: string) => {
+    setCollapsedChapters(prev => ({
+      ...prev,
+      [chapterId]: !prev[chapterId]
+    }));
   };
 
   const moveChapter = async (index: number, direction: 'up' | 'down') => {
@@ -257,9 +267,15 @@ export default function AdminCourseCurriculum() {
           chapters.map((chapter, chapterIdx) => (
             <div key={chapter.id} className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden shadow-sm">
               {/* Chapter Header */}
-              <div className="bg-surface-container-low/50 p-4 border-b border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+              <div 
+                className="bg-surface-container-low/50 p-4 border-b border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group cursor-pointer hover:bg-surface-container-low transition-colors"
+                onClick={() => toggleChapter(chapter.id)}
+              >
                 <div className="flex flex-1 items-center gap-4">
-                  <div className="flex flex-col gap-1">
+                  <div className="flex items-center text-on-surface-variant transition-transform duration-200" style={{ transform: collapsedChapters[chapter.id] ? 'rotate(-90deg)' : 'rotate(0deg)' }}>
+                    <span className="material-symbols-outlined">expand_more</span>
+                  </div>
+                  <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
                     <button 
                       onClick={() => moveChapter(chapterIdx, 'up')}
                       disabled={chapterIdx === 0}
@@ -281,7 +297,7 @@ export default function AdminCourseCurriculum() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <button 
                     onClick={() => openAddLesson(chapter.id)}
                     className="text-sm bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-lg hover:bg-primary hover:text-on-primary transition-colors flex items-center gap-1 font-medium"
@@ -306,7 +322,8 @@ export default function AdminCourseCurriculum() {
               </div>
 
               {/* Lessons List */}
-              <div className="p-4 space-y-2 bg-surface">
+              {!collapsedChapters[chapter.id] && (
+                <div className="p-4 space-y-2 bg-surface animate-in slide-in-from-top-2 duration-200">
                 {!chapter.lessons || chapter.lessons.length === 0 ? (
                   <p className="text-sm text-on-surface-variant text-center py-4 italic">Chưa có bài học nào trong chương này.</p>
                 ) : (
@@ -363,6 +380,7 @@ export default function AdminCourseCurriculum() {
                   ))
                 )}
               </div>
+              )}
             </div>
           ))
         )}
