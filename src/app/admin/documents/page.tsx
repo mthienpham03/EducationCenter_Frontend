@@ -38,13 +38,26 @@ export default function AdminDocumentsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [docToDelete, setDocToDelete] = useState<string | null>(null);
   
+  // Filter states
+  const [filterSearch, setFilterSearch] = useState('');
+  const [filterCourseId, setFilterCourseId] = useState('');
+  const [filterChapterId, setFilterChapterId] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterChapters, setFilterChapters] = useState<any[]>([]);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const versionFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const res = await documentsApi.getDocuments();
+      const params: import('@/lib/api/documents.api').GetDocumentsParams = {};
+      if (filterSearch) params.search = filterSearch;
+      if (filterCourseId) params.courseId = filterCourseId;
+      if (filterChapterId) params.chapterId = filterChapterId;
+      if (filterStatus) params.status = filterStatus;
+
+      const res = await documentsApi.getDocuments(params);
       if (res.success && res.data) {
         setDocuments(res.data);
       }
@@ -111,6 +124,21 @@ export default function AdminDocumentsPage() {
       setLessonId('');
     }
   }, [selectedChapterId, chapters]);
+
+  useEffect(() => {
+    if (filterCourseId) {
+      axiosClient.get(`/courses/${filterCourseId}/chapters`)
+        .then(res => {
+          if (res.data.success) {
+            setFilterChapters(res.data.data);
+          }
+        })
+        .catch(err => console.error(err));
+    } else {
+      setFilterChapters([]);
+    }
+    setFilterChapterId('');
+  }, [filterCourseId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -240,8 +268,64 @@ export default function AdminDocumentsPage() {
       </div>
 
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-        <div className="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low/30">
-          <h3 className="font-headline-md text-lg text-on-surface">Danh sách tài liệu đã tải lên</h3>
+        <div className="p-6 border-b border-outline-variant/20 flex flex-col gap-4 bg-surface-container-low/30">
+          <div className="flex justify-between items-center">
+            <h3 className="font-headline-md text-lg text-on-surface">Danh sách tài liệu đã tải lên</h3>
+          </div>
+          
+          {/* Filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="md:col-span-2">
+              <input 
+                type="text" 
+                placeholder="Tìm kiếm tài liệu..." 
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm"
+              />
+            </div>
+            <div>
+              <select 
+                value={filterCourseId}
+                onChange={(e) => setFilterCourseId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm"
+              >
+                <option value="">-- Tất cả khóa học --</option>
+                {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <select 
+                value={filterChapterId}
+                onChange={(e) => setFilterChapterId(e.target.value)}
+                disabled={!filterCourseId || filterChapters.length === 0}
+                className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm disabled:opacity-50"
+              >
+                <option value="">-- Tất cả chương --</option>
+                {filterChapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <select 
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary text-sm"
+              >
+                <option value="">-- Mọi trạng thái --</option>
+                <option value="published">Đã xuất bản</option>
+                <option value="draft">Nháp</option>
+                <option value="restricted">Bị giới hạn</option>
+                <option value="archived">Lưu trữ</option>
+              </select>
+              <button 
+                onClick={() => fetchDocuments()}
+                className="bg-primary text-on-primary px-4 py-2 rounded-lg hover:opacity-90 flex items-center justify-center"
+                title="Lọc"
+              >
+                <span className="material-symbols-outlined text-sm">search</span>
+              </button>
+            </div>
+          </div>
         </div>
         
         {loading ? (
