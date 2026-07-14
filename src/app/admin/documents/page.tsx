@@ -5,6 +5,8 @@ import { documentsApi, DocumentEntity } from '@/lib/api/documents.api';
 import { api } from '@/lib/api/service';
 import { axiosClient } from '@/lib/api/axios';
 import * as ApiTypes from "@/lib/types/api.types";
+import { toast } from 'react-toastify';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export default function AdminDocumentsPage() {
   const [documents, setDocuments] = useState<DocumentEntity[]>([]);
@@ -32,6 +34,10 @@ export default function AdminDocumentsPage() {
   const [selectedChapterId, setSelectedChapterId] = useState('');
   const [lessonId, setLessonId] = useState('');
   
+  // Confirm Dialog states
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<string | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const versionFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +50,7 @@ export default function AdminDocumentsPage() {
       }
     } catch (error) {
       console.error("Error fetching documents:", error);
-      alert("Không thể tải danh sách tài liệu");
+      toast.error("Không thể tải danh sách tài liệu");
     } finally {
       setLoading(false);
     }
@@ -115,7 +121,7 @@ export default function AdminDocumentsPage() {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      alert("Vui lòng chọn tệp tin cần tải lên");
+      toast.warning("Vui lòng chọn tệp tin cần tải lên");
       return;
     }
 
@@ -130,14 +136,14 @@ export default function AdminDocumentsPage() {
 
       const res = await documentsApi.uploadDocument(formData);
       if (res.success) {
-        alert("Tải lên tài liệu thành công");
+        toast.success("Tải lên tài liệu thành công");
         setIsUploadModalOpen(false);
         resetForm();
         fetchDocuments();
       }
     } catch (error: any) {
       console.error("Upload error:", error);
-      alert(error.response?.data?.message || "Lỗi khi tải lên tài liệu");
+      toast.error(error.response?.data?.message || "Lỗi khi tải lên tài liệu");
     } finally {
       setIsUploading(false);
     }
@@ -146,7 +152,7 @@ export default function AdminDocumentsPage() {
   const handleAddVersion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      alert("Vui lòng chọn tệp tin phiên bản mới");
+      toast.warning("Vui lòng chọn tệp tin phiên bản mới");
       return;
     }
 
@@ -158,14 +164,14 @@ export default function AdminDocumentsPage() {
 
       const res = await documentsApi.addDocumentVersion(selectedDocId, formData);
       if (res.success) {
-        alert("Cập nhật phiên bản thành công");
+        toast.success("Cập nhật phiên bản thành công");
         setIsVersionModalOpen(false);
         resetForm();
         fetchDocuments();
       }
     } catch (error: any) {
       console.error("Add version error:", error);
-      alert(error.response?.data?.message || "Lỗi khi cập nhật phiên bản");
+      toast.error(error.response?.data?.message || "Lỗi khi cập nhật phiên bản");
     } finally {
       setIsUploading(false);
     }
@@ -185,17 +191,25 @@ export default function AdminDocumentsPage() {
     if (versionFileInputRef.current) versionFileInputRef.current.value = '';
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) return;
+  const requestDelete = (id: string) => {
+    setDocToDelete(id);
+    setIsConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!docToDelete) return;
     
     try {
-      const res = await documentsApi.deleteDocument(id);
+      const res = await documentsApi.deleteDocument(docToDelete);
       if (res.success) {
-        alert("Đã xóa tài liệu");
+        toast.success("Đã xóa tài liệu");
         fetchDocuments();
       }
     } catch (error) {
-      alert("Không thể xóa tài liệu");
+      toast.error("Không thể xóa tài liệu");
+    } finally {
+      setIsConfirmOpen(false);
+      setDocToDelete(null);
     }
   };
 
@@ -279,7 +293,7 @@ export default function AdminDocumentsPage() {
                   <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="p-3 text-on-surface-variant bg-surface-container hover:bg-primary hover:text-on-primary rounded-lg transition-all" title="Xem tài liệu">
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>visibility</span>
                   </a>
-                  <button onClick={() => handleDelete(doc.id)} className="p-3 text-error bg-surface-container hover:bg-error-container hover:text-error rounded-lg transition-all" title="Xóa tài liệu">
+                  <button onClick={() => requestDelete(doc.id)} className="p-3 text-error bg-surface-container hover:bg-error-container hover:text-error rounded-lg transition-all" title="Xóa tài liệu">
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>delete</span>
                   </button>
                 </div>
@@ -288,6 +302,19 @@ export default function AdminDocumentsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Xóa tài liệu"
+        message="Bạn có chắc chắn muốn xóa tài liệu này? Thao tác này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        onConfirm={executeDelete}
+        onCancel={() => {
+          setIsConfirmOpen(false);
+          setDocToDelete(null);
+        }}
+      />
 
       {/* Upload Modal */}
       {isUploadModalOpen && (
