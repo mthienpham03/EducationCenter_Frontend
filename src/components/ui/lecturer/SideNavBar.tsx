@@ -9,6 +9,7 @@ export default function SideNavBar() {
   const navItems = [
     { name: "Bảng điều khiển", icon: "dashboard", path: "/lecturer/dashboard" },
     { name: "Khóa học của tôi", icon: "library_books", path: "/lecturer/courses" },
+    { name: "Tài liệu", icon: "folder_open", path: "/lecturer/documents" },
     { name: "Lịch giảng dạy", icon: "calendar_month", path: "/lecturer/schedules" },
     { name: "Chấm điểm & Nhận xét", icon: "grading", path: "/lecturer/grading" },
     { name: "Ngân hàng câu hỏi", icon: "database", path: "/lecturer/question-bank" },

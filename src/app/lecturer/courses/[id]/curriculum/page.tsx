@@ -19,7 +19,7 @@ interface Chapter {
   lessons: Lesson[];
 }
 
-export default function CurriculumPage() {
+export default function LecturerCourseCurriculum() {
   const params = useParams();
   const courseId = params.id as string;
 
