@@ -2,10 +2,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { documentsApi, DocumentEntity } from '@/lib/api/documents.api';
+import { api } from '@/lib/api/service';
+import { axiosClient } from '@/lib/api/axios';
+import * as ApiTypes from "@/lib/types/api.types";
+
 export default function AdminDocumentsPage() {
   const [documents, setDocuments] = useState<DocumentEntity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState('');
+  
   const [isUploading, setIsUploading] = useState(false);
 
   // Form states
@@ -13,9 +21,19 @@ export default function AdminDocumentsPage() {
   const [title, setTitle] = useState('');
   const [visibility, setVisibility] = useState('restricted');
   const [status, setStatus] = useState('draft');
+  const [changeNote, setChangeNote] = useState('');
+  
+  // Classification
+  const [courses, setCourses] = useState<ApiTypes.Course[]>([]);
+  const [chapters, setChapters] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<any[]>([]);
+  
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [selectedChapterId, setSelectedChapterId] = useState('');
   const [lessonId, setLessonId] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const versionFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -32,9 +50,61 @@ export default function AdminDocumentsPage() {
     }
   };
 
+  const fetchCourses = async () => {
+    try {
+      const res = await api.course.getCourses();
+      if (res.success && res.data) {
+        setCourses(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
+
+  const fetchChapters = async (courseId: string) => {
+    try {
+      const res = await axiosClient.get(`/courses/${courseId}/chapters`);
+      if (res.data.success) {
+        setChapters(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching chapters:", error);
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
+    fetchCourses();
   }, []);
+
+  useEffect(() => {
+    if (selectedCourseId) {
+      fetchChapters(selectedCourseId);
+      setSelectedChapterId('');
+      setLessonId('');
+      setLessons([]);
+    } else {
+      setChapters([]);
+      setSelectedChapterId('');
+      setLessonId('');
+      setLessons([]);
+    }
+  }, [selectedCourseId]);
+
+  useEffect(() => {
+    if (selectedChapterId) {
+      const chapter = chapters.find(c => c.id === selectedChapterId);
+      if (chapter && chapter.lessons) {
+        setLessons(chapter.lessons);
+      } else {
+        setLessons([]);
+      }
+      setLessonId('');
+    } else {
+      setLessons([]);
+      setLessonId('');
+    }
+  }, [selectedChapterId, chapters]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -61,13 +131,41 @@ export default function AdminDocumentsPage() {
       const res = await documentsApi.uploadDocument(formData);
       if (res.success) {
         alert("Tải lên tài liệu thành công");
-        setIsModalOpen(false);
+        setIsUploadModalOpen(false);
         resetForm();
-        fetchDocuments(); // refresh list
+        fetchDocuments();
       }
     } catch (error: any) {
       console.error("Upload error:", error);
       alert(error.response?.data?.message || "Lỗi khi tải lên tài liệu");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAddVersion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) {
+      alert("Vui lòng chọn tệp tin phiên bản mới");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (changeNote) formData.append('changeNote', changeNote);
+
+      const res = await documentsApi.addDocumentVersion(selectedDocId, formData);
+      if (res.success) {
+        alert("Cập nhật phiên bản thành công");
+        setIsVersionModalOpen(false);
+        resetForm();
+        fetchDocuments();
+      }
+    } catch (error: any) {
+      console.error("Add version error:", error);
+      alert(error.response?.data?.message || "Lỗi khi cập nhật phiên bản");
     } finally {
       setIsUploading(false);
     }
@@ -79,7 +177,12 @@ export default function AdminDocumentsPage() {
     setVisibility('restricted');
     setStatus('draft');
     setLessonId('');
+    setSelectedCourseId('');
+    setSelectedChapterId('');
+    setChangeNote('');
+    setSelectedDocId('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (versionFileInputRef.current) versionFileInputRef.current.value = '';
   };
 
   const handleDelete = async (id: string) => {
@@ -114,7 +217,7 @@ export default function AdminDocumentsPage() {
           </p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => setIsUploadModalOpen(true)}
           className="bg-primary text-on-primary font-label-md px-stack-md py-stack-sm rounded-lg flex items-center gap-base hover:opacity-90 transition-all"
         >
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>upload</span>
@@ -162,6 +265,17 @@ export default function AdminDocumentsPage() {
                       <span className="text-caption text-on-surface-variant max-w-[200px] truncate" title={doc.lesson.title}>{doc.lesson.title}</span>
                     </div>
                   )}
+                  
+                  <button 
+                    onClick={() => {
+                      setSelectedDocId(doc.id);
+                      setIsVersionModalOpen(true);
+                    }} 
+                    className="p-3 text-secondary bg-surface-container hover:bg-secondary-container hover:text-secondary rounded-lg transition-all" 
+                    title="Cập nhật phiên bản mới"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>history</span>
+                  </button>
                   <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="p-3 text-on-surface-variant bg-surface-container hover:bg-primary hover:text-on-primary rounded-lg transition-all" title="Xem tài liệu">
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>visibility</span>
                   </a>
@@ -176,12 +290,12 @@ export default function AdminDocumentsPage() {
       </div>
 
       {/* Upload Modal */}
-      {isModalOpen && (
+      {isUploadModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center">
               <h2 className="text-headline-md font-headline-md text-on-surface">Tải lên tài liệu mới</h2>
-              <button onClick={() => { setIsModalOpen(false); resetForm(); }} className="text-on-surface-variant hover:text-on-surface">
+              <button onClick={() => { setIsUploadModalOpen(false); resetForm(); }} className="text-on-surface-variant hover:text-on-surface">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -211,47 +325,89 @@ export default function AdminDocumentsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-label-md font-bold text-on-surface mb-2">Trạng thái</label>
-                <select 
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
-                >
-                  <option value="draft">Nháp (Draft)</option>
-                  <option value="published">Xuất bản (Published)</option>
-                  <option value="restricted">Hạn chế (Restricted)</option>
-                  <option value="archived">Lưu trữ (Archived)</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-label-md font-bold text-on-surface mb-2">Trạng thái</label>
+                  <select 
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
+                  >
+                    <option value="draft">Nháp (Draft)</option>
+                    <option value="published">Xuất bản (Published)</option>
+                    <option value="restricted">Hạn chế (Restricted)</option>
+                    <option value="archived">Lưu trữ (Archived)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-label-md font-bold text-on-surface mb-2">Quyền hiển thị</label>
+                  <select 
+                    value={visibility}
+                    onChange={(e) => setVisibility(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
+                  >
+                    <option value="restricted">Chỉ dành cho học viên tham gia</option>
+                    <option value="public">Công khai (Public)</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-label-md font-bold text-on-surface mb-2">Quyền hiển thị</label>
-                <select 
-                  value={visibility}
-                  onChange={(e) => setVisibility(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
-                >
-                  <option value="restricted">Chỉ dành cho học viên tham gia (Restricted)</option>
-                  <option value="public">Công khai (Public)</option>
-                </select>
-              </div>
+              {/* Classification */}
+              <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 space-y-4">
+                <h4 className="font-label-lg font-bold text-on-surface">Phân loại tài liệu</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-label-md text-on-surface mb-2">Khóa học</label>
+                    <select 
+                      value={selectedCourseId}
+                      onChange={(e) => setSelectedCourseId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface text-sm"
+                    >
+                      <option value="">-- Chọn Khóa học --</option>
+                      {courses.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-label-md font-bold text-on-surface mb-2">Liên kết bài học (ID - Tùy chọn)</label>
-                <input 
-                  type="text" 
-                  value={lessonId}
-                  onChange={(e) => setLessonId(e.target.value)}
-                  placeholder="Nhập ID bài học (UUID) nếu muốn liên kết"
-                  className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface"
-                />
+                  <div>
+                    <label className="block text-label-md text-on-surface mb-2">Chương học</label>
+                    <select 
+                      value={selectedChapterId}
+                      onChange={(e) => setSelectedChapterId(e.target.value)}
+                      disabled={!selectedCourseId || chapters.length === 0}
+                      className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface text-sm disabled:opacity-50"
+                    >
+                      <option value="">-- Chọn Chương --</option>
+                      {chapters.map(c => (
+                        <option key={c.id} value={c.id}>{c.title}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-label-md text-on-surface mb-2">Bài học</label>
+                    <select 
+                      value={lessonId}
+                      onChange={(e) => setLessonId(e.target.value)}
+                      disabled={!selectedChapterId || lessons.length === 0}
+                      className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface text-sm disabled:opacity-50"
+                    >
+                      <option value="">-- Chọn Bài học (Tùy chọn) --</option>
+                      {lessons.map(l => (
+                        <option key={l.id} value={l.id}>{l.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end gap-4 pt-4 border-t border-outline-variant">
                 <button 
                   type="button" 
-                  onClick={() => { setIsModalOpen(false); resetForm(); }}
+                  onClick={() => { setIsUploadModalOpen(false); resetForm(); }}
                   className="px-6 py-2 rounded-lg text-primary hover:bg-primary-container transition-colors font-label-md"
                 >
                   Hủy
@@ -267,6 +423,66 @@ export default function AdminDocumentsPage() {
                       Đang tải lên...
                     </>
                   ) : 'Tải lên'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Version Modal */}
+      {isVersionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center">
+              <h2 className="text-headline-md font-headline-md text-on-surface">Cập nhật phiên bản mới</h2>
+              <button onClick={() => { setIsVersionModalOpen(false); resetForm(); }} className="text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddVersion} className="p-6 space-y-6">
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-2">Tệp tin mới *</label>
+                <input 
+                  type="file" 
+                  ref={versionFileInputRef}
+                  onChange={handleFileChange}
+                  accept=".pdf,.ppt,.pptx,.mp4,.mov,.avi,.mkv"
+                  className="block w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-container file:text-primary hover:file:bg-primary/20"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-label-md font-bold text-on-surface mb-2">Ghi chú thay đổi (Tùy chọn)</label>
+                <textarea 
+                  value={changeNote}
+                  onChange={(e) => setChangeNote(e.target.value)}
+                  placeholder="Ví dụ: Cập nhật sửa lỗi chính tả ở slide 5..."
+                  className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary transition-colors text-on-surface h-24 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-4 pt-4 border-t border-outline-variant">
+                <button 
+                  type="button" 
+                  onClick={() => { setIsVersionModalOpen(false); resetForm(); }}
+                  className="px-6 py-2 rounded-lg text-primary hover:bg-primary-container transition-colors font-label-md"
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isUploading || !file}
+                  className="px-6 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary/90 transition-colors font-label-md flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+                      Đang tải lên...
+                    </>
+                  ) : 'Tải lên phiên bản'}
                 </button>
               </div>
             </form>

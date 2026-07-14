@@ -43,6 +43,15 @@ export const documentsApi = {
     return response.data;
   },
 
+  addDocumentVersion: async (id: string, formData: FormData) => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<any>>(`/documents/${id}/versions`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   deleteDocument: async (id: string) => {
     const response = await axiosClient.delete<ApiTypes.ApiResponse<any>>(`/documents/${id}`);
     return response.data;
