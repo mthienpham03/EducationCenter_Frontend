@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api/service';
 import { curriculumApi } from '@/lib/api/curriculum.api';
+import { documentsApi } from '@/lib/api/documents.api';
 import { toast } from 'react-toastify';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Link from 'next/link';
@@ -16,6 +17,7 @@ export default function AdminCourseCurriculum() {
   const [course, setCourse] = useState<any>(null);
   const [chapters, setChapters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lessonDocs, setLessonDocs] = useState<Record<string, any[]>>({});
   
   // UI states
   const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
@@ -49,6 +51,22 @@ export default function AdminCourseCurriculum() {
 
       const chaptersRes = await curriculumApi.getChapters(courseId);
       if (chaptersRes.success) setChapters(chaptersRes.data || []);
+
+      try {
+        const docsRes = await documentsApi.getDocuments({ courseId });
+        if (docsRes.success && docsRes.data) {
+          const grouped: Record<string, any[]> = {};
+          docsRes.data.forEach(doc => {
+            if (doc.lesson?.id) {
+              if (!grouped[doc.lesson.id]) grouped[doc.lesson.id] = [];
+              grouped[doc.lesson.id].push(doc);
+            }
+          });
+          setLessonDocs(grouped);
+        }
+      } catch (err) {
+        console.error("Could not fetch documents", err);
+      }
     } catch (error) {
       toast.error("Không thể tải dữ liệu chương trình học");
     } finally {
@@ -357,6 +375,23 @@ export default function AdminCourseCurriculum() {
                             </span>
                           </div>
                           {lesson.contentSummary && <p className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">{lesson.contentSummary}</p>}
+                          
+                          {/* Documents list */}
+                          {lessonDocs[lesson.id] && lessonDocs[lesson.id].length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {lessonDocs[lesson.id].map(doc => (
+                                <Link 
+                                  key={doc.id}
+                                  href={`/admin/documents`}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] rounded hover:bg-tertiary-fixed-variant transition-colors"
+                                  title="Quản lý tài liệu"
+                                >
+                                  <span className="material-symbols-outlined text-[12px]">description</span>
+                                  <span className="truncate max-w-[150px]">{doc.title}</span>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       
