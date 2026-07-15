@@ -196,7 +196,7 @@ export default function StudentCurriculumPage() {
                                 <span className={`material-symbols-outlined text-[18px] mr-2 mt-0.5 ${isLessonActive ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
                                   {docs.length > 0 ? (docs[0].type.includes('video') ? 'play_circle' : 'article') : 'play_lesson'}
                                 </span>
-                                <div className="flex-1">
+                                <div className="flex-1 min-w-0">
                                   <p className={`font-body-sm line-clamp-2 ${isLessonActive ? 'text-primary font-bold' : 'text-on-surface font-medium'}`}>
                                     {lesson.title}
                                   </p>
@@ -207,7 +207,7 @@ export default function StudentCurriculumPage() {
                                         <div 
                                           key={doc.id}
                                           title={doc.title}
-                                          className={`text-[11px] flex items-center gap-1.5 p-1 rounded hover:bg-outline-variant/20 transition-colors cursor-pointer ${activeDocument?.id === doc.id ? 'text-primary font-semibold' : 'text-on-surface-variant'}`}
+                                          className={`text-[11px] flex items-center gap-1.5 p-1 rounded hover:bg-outline-variant/20 transition-colors cursor-pointer min-w-0 ${activeDocument?.id === doc.id ? 'text-primary font-semibold' : 'text-on-surface-variant'}`}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleSelectLesson(lesson, doc);
