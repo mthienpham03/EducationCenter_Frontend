@@ -220,7 +220,7 @@ export default function AdminCoursesPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low">
-                  {["Khóa học", "Thời gian", "Trạng thái", "Lớp học", ""].map((h) => (
+                  {["Khóa học", "Thời gian", "Trạng thái", "Quản lý", ""].map((h) => (
                     <th
                       key={h}
                       className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap"
@@ -276,15 +276,24 @@ export default function AdminCoursesPage() {
                         </span>
                       </td>
 
-                      {/* Class management */}
+                      {/* Management Links */}
                       <td className="px-6 py-4">
-                        <Link
-                          href={`/admin/courses/${course.id}/classes`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">meeting_room</span>
-                          Quản lý lớp
-                        </Link>
+                        <div className="flex flex-col gap-2">
+                          <Link
+                            href={`/admin/courses/${course.id}/classes`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all w-fit"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">meeting_room</span>
+                            Quản lý lớp
+                          </Link>
+                          <Link
+                            href={`/admin/courses/${course.id}/curriculum`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-tertiary/10 text-tertiary text-xs font-bold rounded-lg hover:bg-tertiary hover:text-white transition-all w-fit"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">menu_book</span>
+                            Nội dung
+                          </Link>
+                        </div>
                       </td>
 
                       {/* Actions */}

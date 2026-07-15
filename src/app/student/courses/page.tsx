@@ -127,7 +127,7 @@ export default function StudentCoursesPage() {
             {/* Action */}
             <div className="p-4 bg-surface-container-lowest border-t border-outline-variant/30 flex justify-between items-center group-hover:bg-primary-fixed/5 transition-colors">
               <Link 
-                href={`/student/courses/${enr.courseId}/classes/${enr.classId}`}
+                href={`/student/courses/${enr.courseId}/curriculum`}
                 className="w-full text-center py-2.5 rounded-lg bg-primary text-white font-label-md font-semibold hover:shadow-md hover:bg-primary/90 transition-all active:scale-[0.98]"
               >
                 Vào Lớp Học
