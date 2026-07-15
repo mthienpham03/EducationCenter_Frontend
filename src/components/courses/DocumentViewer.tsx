@@ -24,8 +24,9 @@ export default function DocumentViewer({ document, lessonSummary }: DocumentProp
     );
   }
 
-  const isVideo = document.type.includes('video');
-  const isPdf = document.type.includes('pdf');
+  const docTypeLower = document.type.toLowerCase();
+  const isVideo = docTypeLower.includes('video');
+  const isPdf = docTypeLower.includes('pdf');
 
   return (
     <div className="w-full h-full flex flex-col bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden shadow-sm">

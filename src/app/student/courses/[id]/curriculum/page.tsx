@@ -193,9 +193,9 @@ export default function StudentCurriculumPage() {
                                 className={`flex items-start p-3 cursor-pointer transition-colors ${isLessonActive ? 'bg-primary/5 border-l-4 border-l-primary' : 'hover:bg-surface-container-lowest border-l-4 border-l-transparent'}`}
                                 onClick={() => handleSelectLesson(lesson)}
                               >
-                                <span className={`material-symbols-outlined text-[18px] mr-2 mt-0.5 ${isLessonActive ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
-                                  {docs.length > 0 ? (docs[0].type.includes('video') ? 'play_circle' : 'article') : 'play_lesson'}
-                                </span>
+                                  <span className={`material-symbols-outlined text-[18px] mr-2 mt-0.5 ${isLessonActive ? 'text-primary' : 'text-on-surface-variant'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                                    {docs.length > 0 ? (docs[0].type.toLowerCase().includes('video') ? 'play_circle' : 'article') : 'play_lesson'}
+                                  </span>
                                 <div className="flex-1 min-w-0">
                                   <p className={`font-body-sm line-clamp-2 ${isLessonActive ? 'text-primary font-bold' : 'text-on-surface font-medium'}`}>
                                     {lesson.title}
@@ -214,7 +214,7 @@ export default function StudentCurriculumPage() {
                                           }}
                                         >
                                           <span className="material-symbols-outlined text-[14px] shrink-0">
-                                            {doc.type.includes('video') ? 'smart_display' : 'picture_as_pdf'}
+                                            {doc.type.toLowerCase().includes('video') ? 'smart_display' : 'picture_as_pdf'}
                                           </span>
                                           <span className="truncate flex-1">{doc.title}</span>
                                         </div>
