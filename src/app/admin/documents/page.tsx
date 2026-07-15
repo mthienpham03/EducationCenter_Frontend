@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { documentsApi, DocumentEntity } from '@/lib/api/documents.api';
 import { api } from '@/lib/api/service';
+import { usersApi } from '@/lib/api/users.api';
 import { axiosClient } from '@/lib/api/axios';
 import * as ApiTypes from "@/lib/types/api.types";
 import { toast } from 'react-toastify';
@@ -24,6 +25,8 @@ export default function AdminDocumentsPage() {
   const [visibility, setVisibility] = useState('enrolled');
   const [status, setStatus] = useState('draft');
   const [changeNote, setChangeNote] = useState('');
+  const [assignedStudentIds, setAssignedStudentIds] = useState<string[]>([]);
+  const [studentsList, setStudentsList] = useState<any[]>([]);
   
   // Classification
   const [courses, setCourses] = useState<ApiTypes.Course[]>([]);
@@ -91,8 +94,20 @@ export default function AdminDocumentsPage() {
     }
   };
 
+  const fetchStudents = async () => {
+    try {
+      const res = await usersApi.getUsers(undefined, 'student');
+      if (res.success && res.data) {
+        setStudentsList(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
+    fetchStudents();
   }, []);
 
   useEffect(() => {
@@ -169,6 +184,9 @@ export default function AdminDocumentsPage() {
       formData.append('visibility', visibility);
       formData.append('status', status);
       if (lessonId) formData.append('lessonId', lessonId);
+      if (visibility === 'restricted' && assignedStudentIds.length > 0) {
+        formData.append('assignedStudentIds', JSON.stringify(assignedStudentIds));
+      }
 
       const res = await documentsApi.uploadDocument(formData);
       if (res.success) {
@@ -223,6 +241,7 @@ export default function AdminDocumentsPage() {
     setSelectedChapterId('');
     setChangeNote('');
     setSelectedDocId('');
+    setAssignedStudentIds([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (versionFileInputRef.current) versionFileInputRef.current.value = '';
   };
@@ -474,6 +493,47 @@ export default function AdminDocumentsPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Student Assignment */}
+              {visibility === 'restricted' && (
+                <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-label-lg font-bold text-on-surface">Cấp quyền truy cập cho Sinh viên</h4>
+                    <span className="text-label-sm text-on-surface-variant bg-surface-container px-2 py-1 rounded">
+                      Đã chọn: {assignedStudentIds.length}
+                    </span>
+                  </div>
+                  
+                  <div className="max-h-48 overflow-y-auto border border-outline-variant rounded-lg bg-surface">
+                    {studentsList.length === 0 ? (
+                      <div className="p-4 text-center text-on-surface-variant text-sm">Không có sinh viên nào trong hệ thống</div>
+                    ) : (
+                      <div className="divide-y divide-outline-variant/50">
+                        {studentsList.map(student => (
+                          <label key={student.id} className="flex items-center gap-3 p-3 hover:bg-surface-container-low cursor-pointer transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={assignedStudentIds.includes(student.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setAssignedStudentIds(prev => [...prev, student.id]);
+                                } else {
+                                  setAssignedStudentIds(prev => prev.filter(id => id !== student.id));
+                                }
+                              }}
+                              className="w-4 h-4 rounded text-primary focus:ring-primary border-outline-variant"
+                            />
+                            <div className="flex-1">
+                              <p className="font-label-md text-on-surface leading-tight">{student.fullName}</p>
+                              <p className="text-body-sm text-on-surface-variant">{student.email}</p>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Classification */}
               <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 space-y-4">

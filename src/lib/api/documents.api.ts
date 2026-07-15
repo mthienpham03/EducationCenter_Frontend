@@ -56,4 +56,9 @@ export const documentsApi = {
     const response = await axiosClient.delete<ApiTypes.ApiResponse<any>>(`/documents/${id}`);
     return response.data;
   },
+
+  updateDocument: async (id: string, data: any) => {
+    const response = await axiosClient.patch<ApiTypes.ApiResponse<DocumentEntity>>(`/documents/${id}`, data);
+    return response.data;
+  },
 };
