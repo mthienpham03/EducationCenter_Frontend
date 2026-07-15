@@ -39,7 +39,7 @@ export default function DocumentViewer({ document, lessonSummary }: DocumentProp
         </h2>
       </div>
       
-      <div className="flex-1 w-full bg-[#1e1e1e] relative min-h-[500px]">
+      <div className="flex-1 w-full bg-[#1e1e1e] relative min-h-0">
         {isVideo ? (
           <video 
             controls 
