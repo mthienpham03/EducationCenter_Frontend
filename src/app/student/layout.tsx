@@ -78,10 +78,6 @@ export default function StudentLayout({
             
             <div className="flex items-center gap-6">
               {/* Notifications / Actions */}
-              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md hover:bg-primary-container transition-all">
-                Đăng ký khóa học mới
-              </button>
-
               <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
                 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
               </button>
