@@ -27,6 +27,11 @@ export default function DocumentViewer({ document, lessonSummary }: DocumentProp
   const docTypeLower = document.type.toLowerCase();
   const isVideo = docTypeLower.includes('video');
   const isPdf = docTypeLower.includes('pdf');
+  const isPpt = docTypeLower.includes('ppt') || docTypeLower.includes('presentation');
+  
+  // Use viewers to bypass Cloudinary's default Content-Disposition: attachment
+  const msViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(document.fileUrl)}`;
+  const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(document.fileUrl)}&embedded=true`;
 
   return (
     <div className="w-full h-full flex flex-col bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden shadow-sm">
@@ -49,10 +54,10 @@ export default function DocumentViewer({ document, lessonSummary }: DocumentProp
           >
             Trình duyệt của bạn không hỗ trợ thẻ video.
           </video>
-        ) : isPdf ? (
+        ) : isPdf || isPpt ? (
           <iframe 
-            src={`${document.fileUrl}#toolbar=0`} 
-            className="w-full h-full absolute inset-0 border-0"
+            src={isPpt ? msViewerUrl : googleViewerUrl} 
+            className="w-full h-full absolute inset-0 border-0 bg-white"
             title={document.title}
           />
         ) : (
