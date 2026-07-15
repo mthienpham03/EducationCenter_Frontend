@@ -206,16 +206,17 @@ export default function StudentCurriculumPage() {
                                       {docs.map(doc => (
                                         <div 
                                           key={doc.id}
-                                          className={`text-[11px] flex items-center gap-1.5 p-1 rounded hover:bg-outline-variant/20 transition-colors ${activeDocument?.id === doc.id ? 'text-primary font-semibold' : 'text-on-surface-variant'}`}
+                                          title={doc.title}
+                                          className={`text-[11px] flex items-center gap-1.5 p-1 rounded hover:bg-outline-variant/20 transition-colors cursor-pointer ${activeDocument?.id === doc.id ? 'text-primary font-semibold' : 'text-on-surface-variant'}`}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleSelectLesson(lesson, doc);
                                           }}
                                         >
-                                          <span className="material-symbols-outlined text-[14px]">
+                                          <span className="material-symbols-outlined text-[14px] shrink-0">
                                             {doc.type.includes('video') ? 'smart_display' : 'picture_as_pdf'}
                                           </span>
-                                          <span className="truncate">{doc.title}</span>
+                                          <span className="truncate flex-1">{doc.title}</span>
                                         </div>
                                       ))}
                                     </div>

@@ -382,12 +382,12 @@ export default function AdminCourseCurriculum() {
                               {lessonDocs[lesson.id].map(doc => (
                                 <Link 
                                   key={doc.id}
-                                  href={`/admin/documents`}
-                                  className="inline-flex items-center gap-1 px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] rounded hover:bg-tertiary-fixed-variant transition-colors"
-                                  title="Quản lý tài liệu"
+                                  href={`/lecturer/documents`}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] rounded hover:bg-tertiary-fixed-variant transition-colors max-w-[200px]"
+                                  title={doc.title}
                                 >
-                                  <span className="material-symbols-outlined text-[12px]">description</span>
-                                  <span className="truncate max-w-[150px]">{doc.title}</span>
+                                  <span className="material-symbols-outlined text-[12px] shrink-0">description</span>
+                                  <span className="truncate">{doc.title}</span>
                                 </Link>
                               ))}
                             </div>
