@@ -42,13 +42,13 @@ export default function StudentLayout({
         {/* Sidebar */}
         <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest border-r border-outline-variant z-40 flex flex-col p-base gap-stack-sm">
           <div className="px-4 py-6 flex items-center gap-3">
-             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
-             </div>
-             <div>
-                <h1 className="font-headline-md text-headline-md font-black text-primary leading-tight">EduCenter</h1>
-                <p className="text-xs text-on-surface-variant font-medium">Cổng Học Viên</p>
-             </div>
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white">
+              <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
+            </div>
+            <div>
+              <h1 className="font-headline-md text-headline-md font-black text-primary leading-tight">EduCenter</h1>
+              <p className="text-xs text-on-surface-variant font-medium">Cổng Học Viên</p>
+            </div>
           </div>
           <nav className="flex-1 px-2 space-y-1 sidebar-scroll overflow-y-auto">
             {menuItems.map((item) => {
@@ -62,10 +62,10 @@ export default function StudentLayout({
             })}
           </nav>
           <div className="mt-auto px-2 pb-4 space-y-1">
-             <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-error hover:bg-error-container/20 rounded-lg transition-all">
-               <span className="material-symbols-outlined">logout</span>
-               <span className="font-label-md text-label-md">Đăng xuất</span>
-             </button>
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-error hover:bg-error-container/20 rounded-lg transition-all">
+              <span className="material-symbols-outlined">logout</span>
+              <span className="font-label-md text-label-md">Đăng xuất</span>
+            </button>
           </div>
         </aside>
 
@@ -73,9 +73,9 @@ export default function StudentLayout({
         <main className="ml-64 min-h-screen flex flex-col">
           <header className="sticky top-0 z-50 flex justify-between items-center px-margin-desktop w-full h-16 bg-surface border-b border-outline-variant shadow-sm">
             <div className="flex-1">
-               <input className="w-full max-w-md px-4 py-2 bg-surface-container rounded-lg border-none focus:ring-2 focus:ring-primary text-body-md" placeholder="Tìm kiếm khóa học..." type="text" />
+              <input className="w-full max-w-md px-4 py-2 bg-surface-container rounded-lg border-none focus:ring-2 focus:ring-primary text-body-md" placeholder="Tìm kiếm khóa học..." type="text" />
             </div>
-            
+
             <div className="flex items-center gap-6">
               {/* Notifications / Actions */}
               <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
@@ -143,7 +143,7 @@ export default function StudentLayout({
       </div>
 
       {isDropdownOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-transparent"
           onClick={() => setIsDropdownOpen(false)}
         />

@@ -42,4 +42,16 @@ export const quizApi = {
   removeQuestionFromQuiz: async (quizId: string, questionId: string) => {
     return api.delete<ApiResponse<any>>(`/quizzes/${quizId}/questions/${questionId}`).then((res) => res.data);
   },
+
+  startQuiz: async (quizId: string) => {
+    return api.post<ApiResponse<any>>(`/quizzes/${quizId}/attempts`).then((res) => res.data);
+  },
+
+  submitQuiz: async (quizId: string, attemptId: string, data: any) => {
+    return api.post<ApiResponse<any>>(`/quizzes/${quizId}/attempts/${attemptId}/submit`, data).then((res) => res.data);
+  },
+
+  getAttemptHistory: async (quizId: string) => {
+    return api.get<ApiResponse<any>>(`/quizzes/${quizId}/attempts`).then((res) => res.data);
+  },
 };
