@@ -10,6 +10,12 @@ export enum QuestionStatus {
   ARCHIVED = 'archived',
 }
 
+export enum QuestionApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 export interface QuestionOption {
   id: string;
   content: string;
@@ -25,10 +31,16 @@ export interface QuestionBank {
   content: string;
   difficulty: string;
   status: QuestionStatus;
+  approvalStatus: QuestionApprovalStatus;
+  rejectionReason?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
-  course?: { id: string; title: string };
+  course?: { id: string; title: string; name?: string };
   lesson?: { id: string; title: string };
+  creator?: { id: string; fullName: string; email?: string; role?: string } | null;
   options?: QuestionOption[];
 }
 
@@ -45,7 +57,13 @@ export interface CreateQuestionDto {
   content: string;
   difficulty?: string;
   status?: QuestionStatus;
+  approvalStatus?: QuestionApprovalStatus;
   options?: CreateOptionDto[];
 }
 
 export interface UpdateQuestionDto extends Partial<CreateQuestionDto> {}
+
+export interface ReviewQuestionDto {
+  status: QuestionApprovalStatus;
+  rejectionReason?: string;
+}

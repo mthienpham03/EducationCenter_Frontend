@@ -14,7 +14,7 @@ interface CourseFormModalProps {
 const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "Expert"];
 const STATUS_OPTIONS: { value: CourseStatus; label: string }[] = [
   { value: "draft", label: "Nháp" },
-  { value: "published", label: "Đang diễn ra" },
+  { value: "published", label: "Đã xuất bản" },
   { value: "archived", label: "Lưu trữ" },
 ];
 
@@ -59,34 +59,13 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
     setLoading(true);
     setError(null);
     try {
-      if (form.startDate || form.endDate) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (form.startDate) {
-          const start = new Date(form.startDate);
-          if (start < today) {
-            setError("Ngày dự kiến bắt đầu không được là ngày trong quá khứ.");
-            setLoading(false);
-            return;
-          }
-        }
-        if (form.endDate) {
-          const end = new Date(form.endDate);
-          if (end < today) {
-            setError("Ngày dự kiến kết thúc không được nhỏ hơn ngày hiện tại.");
-            setLoading(false);
-            return;
-          }
-        }
-        if (form.startDate && form.endDate) {
-          const start = new Date(form.startDate);
-          const end = new Date(form.endDate);
-          if (start >= end) {
-            setError("Ngày dự kiến bắt đầu phải nhỏ hơn ngày dự kiến kết thúc.");
-            setLoading(false);
-            return;
-          }
+      if (form.startDate && form.endDate) {
+        const start = new Date(form.startDate);
+        const end = new Date(form.endDate);
+        if (start > end) {
+          setError("Ngày dự kiến bắt đầu không được lớn hơn ngày dự kiến kết thúc.");
+          setLoading(false);
+          return;
         }
       }
 
