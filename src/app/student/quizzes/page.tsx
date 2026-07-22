@@ -101,23 +101,40 @@ export default function StudentQuizzesPage() {
                 }
               }
 
+              // Kiểm tra xem thực sự có lượt làm dở nào còn thời gian hay không
+              const nowMs = Date.now();
+              const hasActiveInProgress = attemptsList.some((a: any) => {
+                if (a.status !== 'in_progress') return false;
+                if (!quiz.durationMinutes || quiz.durationMinutes <= 0) return true;
+                const startedAtMs = new Date(a.startedAt).getTime();
+                const durationMs = quiz.durationMinutes * 60 * 1000;
+                return (nowMs - startedAtMs) <= (durationMs + 60000);
+              });
+
+              const isOutOfAttempts = maxAttempts ? attemptsUsed >= maxAttempts && !hasActiveInProgress : false;
+
               let statusStr = "Chưa làm";
               let statusClass = "bg-surface-variant text-on-surface-variant";
-              const inProgress = attemptsList.some((a: any) => a.status === 'in_progress');
 
-              if (inProgress) {
+              if (hasActiveInProgress) {
                 statusStr = "Đang làm dở";
-                statusClass = "bg-primary-container/20 text-primary";
+                statusClass = "bg-amber-100 text-amber-800 border border-amber-300 font-bold";
+              } else if (isOutOfAttempts) {
+                statusStr = "Đã hết lượt";
+                statusClass = "bg-red-100 text-red-800 border border-red-300 font-bold";
               } else if (attemptsUsed > 0) {
-                statusStr = "Đã nộp";
-                statusClass = "bg-tertiary-container/20 text-tertiary";
+                statusStr = "Đã nộp bài";
+                statusClass = "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold";
               }
 
               let remainingStr = maxAttempts ? `Còn ${Math.max(0, maxAttempts - attemptsUsed)}/${maxAttempts} lần` : "Nhiều lần";
               if (!maxAttempts && attemptsUsed > 0) remainingStr = `Đã làm ${attemptsUsed} lần`;
 
-              const isOutOfAttempts = maxAttempts ? attemptsUsed >= maxAttempts && !inProgress : false;
-              const actionLabel = inProgress ? "Tiếp tục làm bài" : (isOutOfAttempts ? "Hết lượt làm bài" : "Bắt đầu làm bài");
+              const actionLabel = hasActiveInProgress
+                ? "Tiếp tục làm bài"
+                : (isOutOfAttempts
+                  ? "Đã hết lượt làm bài"
+                  : (attemptsUsed > 0 ? "Làm lại bài kiểm tra" : "Bắt đầu làm bài"));
 
               return (
                 <div key={quiz.id} className="col-span-12 mx-auto w-full max-w-4xl mb-6">
@@ -166,7 +183,7 @@ export default function StudentQuizzesPage() {
                           </div>
                           <div className="bg-surface-container-low p-4 rounded-lg border border-outline-variant/30">
                             <p className="text-caption text-on-surface-variant uppercase font-bold mb-1">Trạng thái</p>
-                            <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded ${statusClass}`}>
+                            <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-md ${statusClass}`}>
                               {statusStr}
                             </span>
                           </div>
@@ -180,34 +197,50 @@ export default function StudentQuizzesPage() {
                           </div>
                         </div>
 
-                        {/* Important Notes */}
-                        <div className="bg-primary/5 p-6 rounded-lg border border-primary/10">
-                          <h4 className="font-label-md text-label-md text-primary mb-3 flex items-center gap-2">
-                            <span className="material-symbols-outlined text-lg">info</span>
-                            Lưu ý quan trọng:
-                          </h4>
-                          <ul className="space-y-2">
-                            <li className="flex items-center gap-3 text-body-md text-on-surface-variant">
-                              <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                              <span>{quiz.maxAttempts ? `Bạn được làm tối đa ${quiz.maxAttempts} lần cho bài thi này.` : "Bạn có thể thực hiện bài thi này nhiều lần."}</span>
-                            </li>
-                            <li className="flex items-center gap-3 text-body-md text-on-surface-variant">
-                              <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                              <span>Đảm bảo kết nối Internet ổn định trước khi bắt đầu.</span>
-                            </li>
-                          </ul>
-                        </div>
+                        {/* Important Notes or Out of Attempts Warning */}
+                        {isOutOfAttempts ? (
+                          <div className="bg-red-50 p-5 rounded-xl border border-red-200 text-red-900 space-y-1">
+                            <div className="flex items-center gap-2 font-bold text-sm text-red-700">
+                              <span className="material-symbols-outlined text-[20px]">block</span>
+                              Đã hết lượt làm bài kiểm tra:
+                            </div>
+                            <p className="text-xs text-red-800 pl-7">
+                              Bạn đã sử dụng hết <strong>{attemptsUsed}/{maxAttempts}</strong> lần làm bài cho phép. Nút làm bài đã bị khóa.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-primary/5 p-6 rounded-lg border border-primary/10">
+                            <h4 className="font-label-md text-label-md text-primary mb-3 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-lg">info</span>
+                              Lưu ý quan trọng:
+                            </h4>
+                            <ul className="space-y-2">
+                              <li className="flex items-center gap-3 text-body-md text-on-surface-variant">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                                <span>{quiz.maxAttempts ? `Bạn được làm tối đa ${quiz.maxAttempts} lần cho bài thi này.` : "Bạn có thể thực hiện bài thi này nhiều lần."}</span>
+                              </li>
+                              <li className="flex items-center gap-3 text-body-md text-on-surface-variant">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                                <span>Đảm bảo kết nối Internet ổn định trước khi bắt đầu.</span>
+                              </li>
+                            </ul>
+                          </div>
+                        )}
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
                           {isOutOfAttempts ? (
-                            <button disabled className="flex-1 bg-surface-variant text-on-surface-variant px-8 py-4 rounded-lg font-label-md text-label-md shadow-sm flex items-center justify-center gap-2 cursor-not-allowed">
-                              {actionLabel}
+                            <button
+                              disabled
+                              className="flex-1 bg-surface-variant/80 text-on-surface-variant/60 border border-outline-variant/50 px-8 py-4 rounded-lg font-label-md text-label-md shadow-none flex items-center justify-center gap-2 cursor-not-allowed font-bold"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">lock</span>
+                              {actionLabel} ({attemptsUsed}/{maxAttempts} lượt)
                             </button>
                           ) : (
                             <Link
                               href={`/student/quizzes/${quiz.id}/take`}
-                              className="flex-1 bg-primary hover:bg-primary-container text-white px-8 py-4 rounded-lg font-label-md text-label-md transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2 group"
+                              className="flex-1 bg-primary hover:bg-primary-container text-white px-8 py-4 rounded-lg font-label-md text-label-md transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2 group font-bold"
                             >
                               {actionLabel}
                               <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">play_arrow</span>
