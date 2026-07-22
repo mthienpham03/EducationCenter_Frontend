@@ -59,7 +59,11 @@ export default function QuizTakePage() {
             const startedAt = dayjs(aRes.data.startedAt);
             const endTime = startedAt.add(aRes.data.durationMinutes, 'minute');
             const diff = endTime.diff(dayjs(), 'second');
-            setTimeLeft(diff > 0 ? diff : 0);
+            if (diff <= 0) {
+              setError("Bài làm này đã hết thời gian quy định. Vui lòng quay lại danh sách bài kiểm tra.");
+              return;
+            }
+            setTimeLeft(diff);
           }
         }
       } catch (err: any) {
