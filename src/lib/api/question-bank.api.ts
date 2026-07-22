@@ -3,6 +3,7 @@ import {
   QuestionBank,
   CreateQuestionDto,
   UpdateQuestionDto,
+  ReviewQuestionDto,
 } from "../types/question.type";
 import { ApiResponse, PaginatedResponse } from "../types/api.types";
 
@@ -12,6 +13,7 @@ export const questionBankApi = {
     courseId?: string;
     lessonId?: string;
     type?: string;
+    approvalStatus?: string;
   }): Promise<ApiResponse<QuestionBank[]>> => {
     // Lưu ý: Backend trả về { success: true, data: QuestionBank[] } nhưng
     // không phân trang, nên ta dùng kiểu trực tiếp thay vì PaginatedResponse.
@@ -39,6 +41,15 @@ export const questionBankApi = {
     data: UpdateQuestionDto
   ): Promise<ApiResponse<QuestionBank>> => {
     const res = await axiosClient.patch(`/question-bank/${id}`, data);
+    return res.data;
+  },
+
+  /** Admin phê duyệt hoặc từ chối câu hỏi */
+  reviewQuestion: async (
+    id: string,
+    data: ReviewQuestionDto
+  ): Promise<ApiResponse<QuestionBank>> => {
+    const res = await axiosClient.patch(`/question-bank/${id}/review`, data);
     return res.data;
   },
 
