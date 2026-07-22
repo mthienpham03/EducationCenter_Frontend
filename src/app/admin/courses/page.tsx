@@ -12,7 +12,7 @@ import Link from "next/link";
 
 const STATUS_PILL: Record<CourseStatus, { bg: string; text: string; label: string }> = {
   draft:     { bg: "#edeeef", text: "#434654", label: "Nháp" },
-  published: { bg: "#6ffbbe", text: "#002113", label: "Đang diễn ra" },
+  published: { bg: "#cff4fc", text: "#055160", label: "Đã xuất bản" },
   archived:  { bg: "#ffdbca", text: "#5c2400", label: "Lưu trữ" },
 };
 
@@ -26,6 +26,29 @@ const LEVEL_COLORS: Record<string, string> = {
 function formatDate(d?: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("vi-VN");
+}
+
+function getTimeStatusBadge(startDate?: string | null, endDate?: string | null) {
+  if (!startDate && !endDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = startDate ? new Date(startDate) : null;
+  if (start) start.setHours(0, 0, 0, 0);
+
+  const end = endDate ? new Date(endDate) : null;
+  if (end) end.setHours(23, 59, 59, 999);
+
+  if (start && start > today) {
+    return { label: "Sắp diễn ra", bg: "#e0f2fe", text: "#0369a1" };
+  }
+  if (end && end < today) {
+    return { label: "Đã kết thúc", bg: "#fef3c7", text: "#92400e" };
+  }
+  if (start && start <= today) {
+    return { label: "Đang diễn ra", bg: "#dcfce7", text: "#15803d" };
+  }
+  return null;
 }
 
 // ─── component ─────────────────────────────────────────────────────────────
@@ -268,12 +291,26 @@ export default function AdminCoursesPage() {
 
                       {/* Status */}
                       <td className="px-6 py-4">
-                        <span
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
-                          style={{ background: pill.bg, color: pill.text }}
-                        >
-                          {pill.label}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
+                            style={{ background: pill.bg, color: pill.text }}
+                          >
+                            {pill.label}
+                          </span>
+                          {(() => {
+                            const timeBadge = getTimeStatusBadge(course.startDate, course.endDate);
+                            if (!timeBadge) return null;
+                            return (
+                              <span
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold"
+                                style={{ background: timeBadge.bg, color: timeBadge.text }}
+                              >
+                                {timeBadge.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </td>
 
                       {/* Management Links */}
