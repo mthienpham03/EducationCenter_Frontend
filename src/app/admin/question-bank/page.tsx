@@ -3,19 +3,37 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { questionBankApi } from "@/lib/api/question-bank.api";
-import { QuestionTypeEnum } from "@/lib/types/question.type";
+import { QuestionTypeEnum, QuestionApprovalStatus } from "@/lib/types/question.type";
+import { useAuthStore } from "@/store/auth.store";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import QuestionDetailModal from "@/components/ui/QuestionDetailModal";
+
+const APPROVAL_BADGES: Record<QuestionApprovalStatus, { bg: string; text: string; label: string; icon: string }> = {
+  [QuestionApprovalStatus.PENDING]: { bg: "bg-amber-100 border-amber-300", text: "text-amber-800", label: "Chờ duyệt", icon: "hourglass_top" },
+  [QuestionApprovalStatus.APPROVED]: { bg: "bg-emerald-100 border-emerald-300", text: "text-emerald-800", label: "Đã duyệt", icon: "check_circle" },
+  [QuestionApprovalStatus.REJECTED]: { bg: "bg-red-100 border-red-300", text: "text-red-800", label: "Bị từ chối", icon: "cancel" },
+};
 
 export default function QuestionBankPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // State for Question Detail Modal
+  const [detailQuestionId, setDetailQuestionId] = useState<string | null>(null);
+
+  // States for Approval Modal
+  const [rejectingQuestionId, setRejectingQuestionId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectError, setRejectError] = useState("");
 
   // States for Filtering & Pagination
   const [search, setSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
+  const [approvalFilter, setApprovalFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
@@ -26,6 +44,26 @@ export default function QuestionBankPage() {
   });
 
   const questions = response?.data || [];
+
+  // Count pending questions
+  const pendingCount = useMemo(() => {
+    return questions.filter((q) => q.approvalStatus === QuestionApprovalStatus.PENDING).length;
+  }, [questions]);
+
+  // Review mutation (Approve / Reject)
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, status, rejectionReason }: { id: string; status: QuestionApprovalStatus; rejectionReason?: string }) =>
+      questionBankApi.reviewQuestion(id, { status, rejectionReason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["questions"] });
+      setRejectingQuestionId(null);
+      setRejectionReason("");
+      setRejectError("");
+    },
+    onError: (err: any) => {
+      setRejectError(err?.response?.data?.message || "Đã xảy ra lỗi khi kiểm duyệt câu hỏi");
+    },
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -39,6 +77,25 @@ export default function QuestionBankPage() {
   const handleDelete = () => {
     if (deleteId) {
       deleteMutation.mutate(deleteId);
+    }
+  };
+
+  const handleApprove = (id: string) => {
+    reviewMutation.mutate({ id, status: QuestionApprovalStatus.APPROVED });
+  };
+
+  const handleConfirmReject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectionReason.trim()) {
+      setRejectError("Vui lòng nhập lý do từ chối câu hỏi.");
+      return;
+    }
+    if (rejectingQuestionId) {
+      reviewMutation.mutate({
+        id: rejectingQuestionId,
+        status: QuestionApprovalStatus.REJECTED,
+        rejectionReason: rejectionReason.trim(),
+      });
     }
   };
 
@@ -71,13 +128,16 @@ export default function QuestionBankPage() {
   // Filtered Questions
   const filteredQuestions = useMemo(() => {
     return questions.filter((q) => {
-      const matchSearch = q.content.toLowerCase().includes(search.toLowerCase());
+      const matchSearch =
+        q.content.toLowerCase().includes(search.toLowerCase()) ||
+        (q.creator?.fullName && q.creator.fullName.toLowerCase().includes(search.toLowerCase()));
       const matchCourse = courseFilter === "all" || q.courseId === courseFilter;
       const matchType = typeFilter === "all" || q.questionType === typeFilter;
       const matchDiff = difficultyFilter === "all" || q.difficulty === difficultyFilter;
-      return matchSearch && matchCourse && matchType && matchDiff;
+      const matchApproval = approvalFilter === "all" || q.approvalStatus === approvalFilter;
+      return matchSearch && matchCourse && matchType && matchDiff && matchApproval;
     });
-  }, [questions, search, courseFilter, typeFilter, difficultyFilter]);
+  }, [questions, search, courseFilter, typeFilter, difficultyFilter, approvalFilter]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / PAGE_SIZE));
@@ -93,9 +153,9 @@ export default function QuestionBankPage() {
       {/* Title & Add Button */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">
         <div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface">Ngân hàng câu hỏi</h1>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">Ngân hàng câu hỏi & Kiểm duyệt</h1>
           <p className="font-body-md text-on-surface-variant mt-1">
-            Quản lý và cập nhật danh sách các câu hỏi trắc nghiệm dùng chung cho khóa học.
+            Quản lý, tạo mới và phê duyệt danh sách các câu hỏi trắc nghiệm do Giảng viên đóng góp.
           </p>
         </div>
         <Link
@@ -105,6 +165,62 @@ export default function QuestionBankPage() {
           <span className="material-symbols-outlined text-[20px]">add</span>
           Thêm Câu Hỏi
         </Link>
+      </div>
+
+      {/* Quick Status Tabs / Badges */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-1">
+        <button
+          onClick={() => { setApprovalFilter("all"); setCurrentPage(1); }}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+            approvalFilter === "all"
+              ? "bg-primary text-white shadow-md shadow-primary/20"
+              : "bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-outline-variant/40"
+          }`}
+        >
+          <span>Tất cả</span>
+          <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">{questions.length}</span>
+        </button>
+
+        <button
+          onClick={() => { setApprovalFilter(QuestionApprovalStatus.PENDING); setCurrentPage(1); }}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+            approvalFilter === QuestionApprovalStatus.PENDING
+              ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+              : "bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">hourglass_top</span>
+          <span>Chờ kiểm duyệt</span>
+          {pendingCount > 0 && (
+            <span className="bg-amber-800 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
+              {pendingCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => { setApprovalFilter(QuestionApprovalStatus.APPROVED); setCurrentPage(1); }}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+            approvalFilter === QuestionApprovalStatus.APPROVED
+              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+              : "bg-emerald-50 text-emerald-900 border border-emerald-300 hover:bg-emerald-100"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">check_circle</span>
+          <span>Đã duyệt</span>
+        </button>
+
+        <button
+          onClick={() => { setApprovalFilter(QuestionApprovalStatus.REJECTED); setCurrentPage(1); }}
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+            approvalFilter === QuestionApprovalStatus.REJECTED
+              ? "bg-red-600 text-white shadow-md shadow-red-600/20"
+              : "bg-red-50 text-red-900 border border-red-300 hover:bg-red-100"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[18px]">cancel</span>
+          <span>Bị từ chối</span>
+        </button>
       </div>
 
       {/* Main Table Card */}
@@ -119,7 +235,7 @@ export default function QuestionBankPage() {
                 type="text"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                placeholder="Tìm kiếm câu hỏi..."
+                placeholder="Tìm kiếm câu hỏi, tác giả..."
                 className="w-full pl-9 pr-4 py-2 bg-surface-container rounded-lg border border-outline-variant/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
               />
             </div>
@@ -182,61 +298,118 @@ export default function QuestionBankPage() {
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-surface-container-low border-b border-outline-variant/20">
-                  <th className="px-4 py-3 w-12 text-center">
-                    <input type="checkbox" className="rounded text-primary focus:ring-primary border-outline-variant/50" disabled title="Tính năng chọn nhiều sẽ sớm ra mắt" />
-                  </th>
                   <th className="px-4 py-3 font-label-md text-on-surface-variant uppercase tracking-wider">Nội dung</th>
+                  <th className="px-4 py-3 font-label-md text-on-surface-variant uppercase tracking-wider">Tác giả</th>
                   <th className="px-4 py-3 font-label-md text-on-surface-variant uppercase tracking-wider">Phân loại</th>
                   <th className="px-4 py-3 font-label-md text-on-surface-variant uppercase tracking-wider">Khóa học</th>
-                  <th className="px-4 py-3 font-label-md text-on-surface-variant uppercase tracking-wider text-right">Thao tác</th>
+                  <th className="px-4 py-3 font-label-md text-on-surface-variant uppercase tracking-wider">Trạng thái duyệt</th>
+                  <th className="px-4 py-3 font-label-md text-on-surface-variant uppercase tracking-wider text-right">Thao tác / Kiểm duyệt</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
-                {paginatedQuestions.map((q) => (
-                  <tr key={q.id} className="hover:bg-surface-container-lowest transition-colors group">
-                    <td className="px-4 py-4 text-center">
-                      <input type="checkbox" className="rounded text-primary focus:ring-primary border-outline-variant/50 cursor-pointer" />
-                    </td>
-                    <td className="px-4 py-4 max-w-[300px] xl:max-w-[450px]">
-                      <p className="font-medium text-on-surface text-sm line-clamp-2" title={q.content}>
-                        {q.content}
-                      </p>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1.5 items-start">
-                        <span className="inline-flex bg-primary-container text-on-primary-container px-2 py-0.5 rounded text-xs font-semibold">
-                          {getQuestionTypeLabel(q.questionType)}
+                {paginatedQuestions.map((q) => {
+                  const approvalInfo = APPROVAL_BADGES[q.approvalStatus || QuestionApprovalStatus.PENDING];
+                  const isPending = q.approvalStatus === QuestionApprovalStatus.PENDING;
+
+                  return (
+                    <tr key={q.id} className="hover:bg-surface-container-lowest transition-colors group">
+                      <td className="px-4 py-4 max-w-[300px] xl:max-w-[420px]">
+                        <p className="font-medium text-on-surface text-sm line-clamp-2" title={q.content}>
+                          {q.content}
+                        </p>
+                        {q.approvalStatus === QuestionApprovalStatus.REJECTED && q.rejectionReason && (
+                          <p className="text-xs text-red-600 mt-1 italic">Lý do từ chối: {q.rejectionReason}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-xs text-on-surface">
+                            {q.creator?.fullName || "Hệ thống"}
+                          </span>
+                          {q.creator?.role && (
+                            <span className="text-[11px] text-on-surface-variant">
+                              {q.creator.role === "lecturer" ? "Giảng viên" : q.creator.role === "admin" ? "Admin" : q.creator.role}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1.5 items-start">
+                          <span className="inline-flex bg-primary-container text-on-primary-container px-2 py-0.5 rounded text-xs font-semibold">
+                            {getQuestionTypeLabel(q.questionType)}
+                          </span>
+                          <span className="inline-flex bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded text-xs font-semibold">
+                            Mức độ: {q.difficulty || "Chưa chọn"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-xs text-on-surface-variant max-w-[150px] truncate" title={(q.course as any)?.title || (q.course as any)?.name || "Chưa phân loại"}>
+                          {(q.course as any)?.title || (q.course as any)?.name || "Chưa phân loại"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${approvalInfo.bg} ${approvalInfo.text}`}>
+                          <span className="material-symbols-outlined text-[14px]">{approvalInfo.icon}</span>
+                          {approvalInfo.label}
                         </span>
-                        <span className="inline-flex bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded text-xs font-semibold">
-                          Mức độ: {q.difficulty || "Chưa chọn"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <p className="text-xs text-on-surface-variant max-w-[150px] truncate" title={(q.course as any)?.title || (q.course as any)?.name || "Chưa phân loại"}>
-                        {(q.course as any)?.title || (q.course as any)?.name || "Chưa phân loại"}
-                      </p>
-                    </td>
-                    <td className="px-4 py-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link
-                          href={`/admin/question-bank/${q.id}/edit`}
-                          className="p-1.5 hover:bg-primary-fixed rounded-lg text-on-surface-variant hover:text-primary transition-colors inline-flex"
-                          title="Sửa"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">edit</span>
-                        </Link>
-                        <button
-                          onClick={() => setDeleteId(q.id)}
-                          className="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors inline-flex"
-                          title="Xóa"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          {isPending && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(q.id)}
+                                disabled={reviewMutation.isPending}
+                                className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-all flex items-center gap-1 shadow-sm"
+                                title="Duyệt câu hỏi"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">check</span>
+                                Duyệt
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setRejectingQuestionId(q.id);
+                                  setRejectionReason("");
+                                  setRejectError("");
+                                }}
+                                disabled={reviewMutation.isPending}
+                                className="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-all flex items-center gap-1 shadow-sm"
+                                title="Từ chối câu hỏi"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">close</span>
+                                Từ chối
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => setDetailQuestionId(q.id)}
+                            className="p-1.5 hover:bg-surface-container-high rounded-lg text-on-surface-variant hover:text-primary transition-colors inline-flex"
+                            title="Xem chi tiết"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">visibility</span>
+                          </button>
+                          {user?.id && q.createdBy === user.id && (
+                            <Link
+                              href={`/admin/question-bank/${q.id}/edit`}
+                              className="p-1.5 hover:bg-primary-fixed rounded-lg text-on-surface-variant hover:text-primary transition-colors inline-flex"
+                              title="Sửa câu hỏi"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => setDeleteId(q.id)}
+                            className="p-1.5 hover:bg-error-container/30 rounded-lg text-on-surface-variant hover:text-error transition-colors inline-flex"
+                            title="Xóa"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -289,6 +462,87 @@ export default function QuestionBankPage() {
           </div>
         )}
       </div>
+
+      {/* Reject Reason Modal */}
+      {rejectingQuestionId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-outline-variant/30 pb-3">
+              <h3 className="font-bold text-headline-sm text-red-600 flex items-center gap-2">
+                <span className="material-symbols-outlined">cancel</span>
+                Từ chối câu hỏi
+              </h3>
+              <button
+                onClick={() => setRejectingQuestionId(null)}
+                className="p-1 text-on-surface-variant hover:bg-surface-container rounded-lg"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmReject} className="space-y-4">
+              {rejectError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px]">error</span>
+                  {rejectError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-on-surface mb-1.5">
+                  Lý do từ chối câu hỏi <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={rejectionReason}
+                  onChange={(e) => {
+                    setRejectionReason(e.target.value);
+                    setRejectError("");
+                  }}
+                  placeholder="Nhập chi tiết lý do từ chối để Giảng viên chỉnh sửa..."
+                  className="w-full px-3 py-2 bg-surface-container border border-outline-variant/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectingQuestionId(null)}
+                  className="px-4 py-2 rounded-xl border border-outline-variant text-sm font-bold text-on-surface hover:bg-surface-container transition-all"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={reviewMutation.isPending}
+                  className="px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-all flex items-center gap-2"
+                >
+                  {reviewMutation.isPending ? "Đang xử lý..." : "Xác nhận Từ chối"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <QuestionDetailModal
+        isOpen={!!detailQuestionId}
+        questionId={detailQuestionId}
+        onClose={() => setDetailQuestionId(null)}
+        isAdmin={true}
+        currentUserId={user?.id}
+        onApprove={(id) => handleApprove(id)}
+        onOpenRejectModal={(id) => {
+          setRejectingQuestionId(id);
+          setRejectionReason("");
+          setRejectError("");
+        }}
+        onEdit={(id) => {
+          window.location.href = `/admin/question-bank/${id}/edit`;
+        }}
+        isReviewPending={reviewMutation.isPending}
+      />
 
       <ConfirmDialog
         isOpen={!!deleteId}
