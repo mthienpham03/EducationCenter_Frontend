@@ -66,7 +66,8 @@ export default function AssignLecturerView({ courseId, classId }: { courseId: st
         setError(res.message || "Phân công thất bại");
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Đã có lỗi xảy ra");
+      const msg = err?.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : (msg || "Đã có lỗi xảy ra"));
     } finally {
       setAssigning(false);
     }

@@ -75,13 +75,14 @@ export default function StudentDashboard() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-surface-bright text-on-surface min-h-screen flex font-body-md">
-      {/* SideNavBar Shell */}
-      <aside className="h-full w-72 fixed left-0 top-0 flex flex-col p-stack-md bg-surface-container-lowest shadow-sm border-r border-outline-variant z-50 overflow-y-auto">
-        <div className="mb-10">
-          <h1 className="text-headline-md font-headline-md font-bold text-primary">EduCenter</h1>
-          <p className="text-label-md font-label-md text-on-surface-variant">Cổng học viên</p>
+    <>
+      {/* Header Section */}
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-headline-lg font-headline-lg text-on-surface mb-2">Khóa học của tôi</h2>
+          <p className="text-body-md text-on-surface-variant">Chào mừng trở lại, {user?.fullName || "Học viên"}! Bạn có <span className="font-bold text-primary">3 khóa học</span> đang diễn ra.</p>
         </div>
+<<<<<<< HEAD
         <nav className="flex-1 flex flex-col gap-2">
           <Link href="/student/dashboard" className="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-md transition-all duration-200 active:scale-95">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>school</span>
@@ -111,16 +112,19 @@ export default function StudentDashboard() {
         <div className="mt-auto flex flex-col gap-2 pt-6 border-t border-outline-variant">
           <button className="w-full mb-4 py-3 px-4 bg-secondary text-on-secondary rounded-xl font-label-md hover:opacity-90 transition-all">
             Xem tất cả lớp học
+=======
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md hover:bg-surface-container transition-all">
+            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>filter_list</span>
+            Lọc
+>>>>>>> origin/dev
           </button>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg font-label-md">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>settings</span>
-            <span>Cài đặt</span>
-          </Link>
-          <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-error hover:bg-error-container transition-all rounded-lg font-label-md">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>logout</span>
-            <span>Đăng xuất</span>
+          <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg font-label-md hover:bg-surface-container transition-all">
+            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0" }}>sort</span>
+            Sắp xếp
           </button>
         </div>
+<<<<<<< HEAD
       </aside>
 
       {/* Main Container to offset the sidebar */}
@@ -214,6 +218,9 @@ export default function StudentDashboard() {
                 </button>
               </div>
             </div>
+=======
+      </div>
+>>>>>>> origin/dev
 
             {/* Bento Grid Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-10">
@@ -398,14 +405,11 @@ export default function StudentDashboard() {
               <p className="text-body-lg italic text-on-surface mb-2">"Chào Minh, tiến độ học tập của bạn rất ấn tượng. Hãy tiếp tục duy trì và đừng ngần ngại đặt câu hỏi trong mục Quizzes nhé!"</p>
               <p className="text-label-md font-bold text-primary">— Cố vấn học tập Minh Anh</p>
             </div>
-          </div>
-        </main>
-      </div>
 
       {/* FAB */}
       <button className="fixed bottom-8 right-8 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
       </button>
-    </div>
+    </>
   );
 }

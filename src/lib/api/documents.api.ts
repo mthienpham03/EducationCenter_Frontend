@@ -4,6 +4,7 @@
  */
 
 import { axiosClient } from "./axios";
+import * as ApiTypes from "@/lib/types/api.types";
 
 // Types
 export interface DocumentItem {
@@ -17,7 +18,7 @@ export interface DocumentItem {
   owner: {
     id: string;
     fullName: string;
-    email: string;
+    email?: string;
   } | null;
   lesson: {
     id: string;
@@ -26,6 +27,8 @@ export interface DocumentItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface DocumentEntity extends DocumentItem {}
 
 export interface DocumentDetail extends DocumentItem {
   versions: DocumentVersionItem[];
@@ -70,7 +73,11 @@ export interface DocumentQueryParams {
   chapterId?: string;
   courseId?: string;
   status?: string;
+  search?: string;
+  visibility?: string;
 }
+
+export interface GetDocumentsParams extends DocumentQueryParams {}
 
 export const documentService = {
   /**
@@ -183,6 +190,41 @@ export const documentService = {
     const response = await axiosClient.get(
       `/documents/${documentId}/versions/${versionId}`
     );
+    return response.data;
+  },
+};
+
+export const documentsApi = {
+  getDocuments: async (params?: GetDocumentsParams) => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<DocumentEntity[]>>("/documents", { params });
+    return response.data;
+  },
+  
+  uploadDocument: async (formData: FormData) => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<DocumentEntity>>("/documents", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  addDocumentVersion: async (id: string, formData: FormData) => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<any>>(`/documents/${id}/versions`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  deleteDocument: async (id: string) => {
+    const response = await axiosClient.delete<ApiTypes.ApiResponse<any>>(`/documents/${id}`);
+    return response.data;
+  },
+
+  updateDocument: async (id: string, data: any) => {
+    const response = await axiosClient.patch<ApiTypes.ApiResponse<DocumentEntity>>(`/documents/${id}`, data);
     return response.data;
   },
 };

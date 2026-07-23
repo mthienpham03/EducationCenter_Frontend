@@ -94,7 +94,8 @@ export default function EnrollStudentView({ courseId, classId }: { courseId: str
         setError(res.message || "Ghi danh thất bại");
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Đã có lỗi xảy ra");
+      const msg = err?.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : (msg || "Đã có lỗi xảy ra"));
     } finally {
       setEnrolling(false);
     }
@@ -141,7 +142,8 @@ export default function EnrollStudentView({ courseId, classId }: { courseId: str
         setError(res.message || "Chuyển lớp thất bại");
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Đã có lỗi xảy ra");
+      const msg = err?.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : (msg || "Đã có lỗi xảy ra"));
     } finally {
       setTransferring(false);
     }

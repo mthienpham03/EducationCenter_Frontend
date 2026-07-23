@@ -28,7 +28,6 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
     name: "",
     description: "",
     thumbnailUrl: "",
-    level: "",
     status: "draft",
     startDate: "",
     endDate: "",
@@ -41,13 +40,12 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
         name: editingCourse.name,
         description: editingCourse.description || "",
         thumbnailUrl: editingCourse.thumbnailUrl || "",
-        level: editingCourse.level || "",
         status: editingCourse.status,
         startDate: editingCourse.startDate ? editingCourse.startDate.split("T")[0] : "",
         endDate: editingCourse.endDate ? editingCourse.endDate.split("T")[0] : "",
       });
     } else {
-      setForm({ code: "", name: "", description: "", thumbnailUrl: "", level: "", status: "draft", startDate: "", endDate: "" });
+      setForm({ code: "", name: "", description: "", thumbnailUrl: "", status: "draft", startDate: "", endDate: "" });
     }
     setError(null);
   }, [editingCourse, isOpen]);
@@ -61,14 +59,24 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
     setLoading(true);
     setError(null);
     try {
+      if (form.startDate && form.endDate) {
+        const start = new Date(form.startDate);
+        const end = new Date(form.endDate);
+        if (start > end) {
+          setError("Ngày dự kiến bắt đầu không được lớn hơn ngày dự kiến kết thúc.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const payload: CreateCourseRequest = {
         ...form,
         description: form.description || undefined,
         thumbnailUrl: form.thumbnailUrl || undefined,
-        level: form.level || undefined,
         startDate: form.startDate || undefined,
         endDate: form.endDate || undefined,
       };
+      delete (payload as any).level;
       let res;
       if (isEdit && editingCourse) {
         res = await courseService.updateCourse(editingCourse.id, payload as UpdateCourseRequest);
@@ -226,47 +234,28 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Level */}
-            <div>
-              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Cấp độ</label>
-              <select
-                id="course-level"
-                name="level"
-                value={form.level}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-              >
-                <option value="">-- Chọn cấp độ --</option>
-                {LEVEL_OPTIONS.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">
-                Trạng thái <span className="text-error">*</span>
-              </label>
-              <select
-                id="course-status"
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
+          {/* Status */}
+          <div>
+            <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">
+              Trạng thái <span className="text-error">*</span>
+            </label>
+            <select
+              id="course-status"
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Start Date */}
             <div>
-              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Ngày bắt đầu</label>
+              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Ngày dự kiến bắt đầu</label>
               <input
                 id="course-start-date"
                 name="startDate"
@@ -279,7 +268,7 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
 
             {/* End Date */}
             <div>
-              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Ngày kết thúc</label>
+              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Ngày dự kiến kết thúc</label>
               <input
                 id="course-end-date"
                 name="endDate"

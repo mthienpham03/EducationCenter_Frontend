@@ -34,8 +34,10 @@ export default function AdminLayout({
     { href: "/admin/students", icon: "group", label: "Học viên" },
     { href: "/admin/specializations", icon: "category", label: "Chuyên ngành" },
     { href: "/admin/courses", icon: "library_books", label: "Khóa học" },
-    { href: "/admin/quizzes", icon: "quiz", label: "Đề thi & Kiểm tra" },
+    { href: "/admin/question-bank", icon: "database", label: "Ngân hàng câu hỏi" },
+    { href: "/admin/quizzes", icon: "quiz", label: "Bài kiểm tra" },
     { href: "/admin/schedules", icon: "calendar_month", label: "Lịch học" },
+    { href: "/admin/documents", icon: "description", label: "Tài liệu" },
     { href: "/admin/reports", icon: "assessment", label: "Báo cáo" },
   ];
 

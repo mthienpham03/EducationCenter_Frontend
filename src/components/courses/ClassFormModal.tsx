@@ -14,9 +14,11 @@ interface ClassFormModalProps {
 }
 
 const STATUS_OPTIONS: { value: ClassStatus; label: string }[] = [
-  { value: "draft", label: "Nháp" },
-  { value: "published", label: "Đang hoạt động" },
-  { value: "archived", label: "Lưu trữ" },
+  { value: "scheduled", label: "Đã lên lịch" },
+  { value: "active", label: "Đang học" },
+  { value: "on_hold", label: "Tạm dừng" },
+  { value: "completed", label: "Đã kết thúc" },
+  { value: "cancelled", label: "Đã hủy" },
 ];
 
 export default function ClassFormModal({
@@ -34,7 +36,10 @@ export default function ClassFormModal({
   const [form, setForm] = useState<CreateClassRequest>({
     name: "",
     maxStudents: undefined,
-    status: "draft",
+    status: "scheduled",
+    expectedStartDate: "",
+    expectedEndDate: "",
+    scheduleNote: "",
   });
 
   useEffect(() => {
@@ -43,9 +48,19 @@ export default function ClassFormModal({
         name: editingClass.name,
         maxStudents: editingClass.maxStudents ?? undefined,
         status: editingClass.status,
+        expectedStartDate: editingClass.expectedStartDate ? editingClass.expectedStartDate.split('T')[0] : "",
+        expectedEndDate: editingClass.expectedEndDate ? editingClass.expectedEndDate.split('T')[0] : "",
+        scheduleNote: editingClass.scheduleNote || "",
       });
     } else {
-      setForm({ name: "", maxStudents: undefined, status: "draft" });
+      setForm({ 
+        name: "", 
+        maxStudents: undefined, 
+        status: "scheduled",
+        expectedStartDate: "",
+        expectedEndDate: "",
+        scheduleNote: "",
+      });
     }
     setError(null);
   }, [editingClass, isOpen]);
@@ -63,11 +78,47 @@ export default function ClassFormModal({
     setLoading(true);
     setError(null);
     try {
+      if (form.expectedStartDate || form.expectedEndDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (form.expectedStartDate) {
+          const start = new Date(form.expectedStartDate);
+          if (start < today) {
+            setError("Khai giảng dự kiến không được là ngày trong quá khứ.");
+            setLoading(false);
+            return;
+          }
+        }
+        if (form.expectedEndDate) {
+          const end = new Date(form.expectedEndDate);
+          if (end < today) {
+            setError("Kết thúc dự kiến không được nhỏ hơn ngày hiện tại.");
+            setLoading(false);
+            return;
+          }
+        }
+        if (form.expectedStartDate && form.expectedEndDate) {
+          const start = new Date(form.expectedStartDate);
+          const end = new Date(form.expectedEndDate);
+          if (start >= end) {
+            setError("Khai giảng dự kiến phải nhỏ hơn kết thúc dự kiến.");
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      const payload: any = { ...form };
+      if (!payload.expectedStartDate) delete payload.expectedStartDate;
+      if (!payload.expectedEndDate) delete payload.expectedEndDate;
+      if (!payload.scheduleNote) delete payload.scheduleNote;
+
       let res;
       if (isEdit && editingClass) {
-        res = await courseService.updateClass(editingClass.id, form as UpdateClassRequest);
+        res = await courseService.updateClass(editingClass.id, payload as UpdateClassRequest);
       } else {
-        res = await courseService.createClass(courseId, form);
+        res = await courseService.createClass(courseId, payload as CreateClassRequest);
       }
       if (res.success) {
         onSuccess();
@@ -76,7 +127,8 @@ export default function ClassFormModal({
         setError(res.message || "Đã có lỗi xảy ra");
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Đã có lỗi xảy ra");
+      const msg = err?.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : (msg || "Đã có lỗi xảy ra"));
     } finally {
       setLoading(false);
     }
@@ -170,6 +222,45 @@ export default function ClassFormModal({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Expected Start Date */}
+            <div>
+              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Khai giảng dự kiến</label>
+              <input
+                name="expectedStartDate"
+                type="date"
+                value={form.expectedStartDate || ""}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              />
+            </div>
+
+            {/* Expected End Date */}
+            <div>
+              <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Kết thúc dự kiến</label>
+              <input
+                name="expectedEndDate"
+                type="date"
+                value={form.expectedEndDate || ""}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Schedule Note */}
+          <div>
+            <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">Ghi chú lịch học</label>
+            <input
+              name="scheduleNote"
+              type="text"
+              value={form.scheduleNote || ""}
+              onChange={handleChange}
+              placeholder="VD: Tối 2-4-6 (18h-20h)"
+              className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            />
           </div>
 
           {/* Actions */}

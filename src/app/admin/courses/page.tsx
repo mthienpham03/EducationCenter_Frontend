@@ -12,7 +12,7 @@ import Link from "next/link";
 
 const STATUS_PILL: Record<CourseStatus, { bg: string; text: string; label: string }> = {
   draft:     { bg: "#edeeef", text: "#434654", label: "Nháp" },
-  published: { bg: "#6ffbbe", text: "#002113", label: "Đang xuất bản" },
+  published: { bg: "#cff4fc", text: "#055160", label: "Đã xuất bản" },
   archived:  { bg: "#ffdbca", text: "#5c2400", label: "Lưu trữ" },
 };
 
@@ -26,6 +26,29 @@ const LEVEL_COLORS: Record<string, string> = {
 function formatDate(d?: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("vi-VN");
+}
+
+function getTimeStatusBadge(startDate?: string | null, endDate?: string | null) {
+  if (!startDate && !endDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = startDate ? new Date(startDate) : null;
+  if (start) start.setHours(0, 0, 0, 0);
+
+  const end = endDate ? new Date(endDate) : null;
+  if (end) end.setHours(23, 59, 59, 999);
+
+  if (start && start > today) {
+    return { label: "Sắp diễn ra", bg: "#e0f2fe", text: "#0369a1" };
+  }
+  if (end && end < today) {
+    return { label: "Đã kết thúc", bg: "#fef3c7", text: "#92400e" };
+  }
+  if (start && start <= today) {
+    return { label: "Đang diễn ra", bg: "#dcfce7", text: "#15803d" };
+  }
+  return null;
 }
 
 // ─── component ─────────────────────────────────────────────────────────────
@@ -144,7 +167,7 @@ export default function AdminCoursesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Tổng khóa học", value: stats.total, icon: "library_books", bg: "bg-primary-fixed", color: "text-primary" },
-          { label: "Đang xuất bản", value: stats.published, icon: "play_circle", bg: "bg-tertiary-fixed", color: "text-tertiary" },
+          { label: "Đang diễn ra", value: stats.published, icon: "play_circle", bg: "bg-tertiary-fixed", color: "text-tertiary" },
           { label: "Nháp", value: stats.draft, icon: "edit_note", bg: "bg-surface-container-high", color: "text-on-surface-variant" },
           { label: "Lưu trữ", value: stats.archived, icon: "archive", bg: "bg-secondary-fixed", color: "text-secondary" },
         ].map((s) => (
@@ -220,7 +243,7 @@ export default function AdminCoursesPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low">
-                  {["Khóa học", "Cấp độ", "Thời gian", "Trạng thái", "Lớp học", ""].map((h) => (
+                  {["Khóa học", "Thời gian", "Trạng thái", "Quản lý", ""].map((h) => (
                     <th
                       key={h}
                       className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider whitespace-nowrap"
@@ -255,16 +278,6 @@ export default function AdminCoursesPage() {
                         </div>
                       </td>
 
-                      {/* Level */}
-                      <td className="px-6 py-4">
-                        {course.level ? (
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${LEVEL_COLORS[course.level] || "bg-surface-container text-on-surface-variant"}`}>
-                            {course.level}
-                          </span>
-                        ) : (
-                          <span className="text-on-surface-variant text-xs">—</span>
-                        )}
-                      </td>
 
                       {/* Date range */}
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -278,23 +291,46 @@ export default function AdminCoursesPage() {
 
                       {/* Status */}
                       <td className="px-6 py-4">
-                        <span
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
-                          style={{ background: pill.bg, color: pill.text }}
-                        >
-                          {pill.label}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
+                            style={{ background: pill.bg, color: pill.text }}
+                          >
+                            {pill.label}
+                          </span>
+                          {(() => {
+                            const timeBadge = getTimeStatusBadge(course.startDate, course.endDate);
+                            if (!timeBadge) return null;
+                            return (
+                              <span
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold"
+                                style={{ background: timeBadge.bg, color: timeBadge.text }}
+                              >
+                                {timeBadge.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </td>
 
-                      {/* Class management */}
+                      {/* Management Links */}
                       <td className="px-6 py-4">
-                        <Link
-                          href={`/admin/courses/${course.id}/classes`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">meeting_room</span>
-                          Quản lý lớp
-                        </Link>
+                        <div className="flex flex-col gap-2">
+                          <Link
+                            href={`/admin/courses/${course.id}/classes`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all w-fit"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">meeting_room</span>
+                            Quản lý lớp
+                          </Link>
+                          <Link
+                            href={`/admin/courses/${course.id}/curriculum`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-tertiary/10 text-tertiary text-xs font-bold rounded-lg hover:bg-tertiary hover:text-white transition-all w-fit"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">menu_book</span>
+                            Nội dung
+                          </Link>
+                        </div>
                       </td>
 
                       {/* Actions */}

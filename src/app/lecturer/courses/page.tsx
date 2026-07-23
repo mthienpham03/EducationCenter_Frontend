@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { courseService } from "@/lib/api/service";
 import CourseFormModal from "@/components/courses/CourseFormModal";
+import { api } from "@/lib/api";
 
 interface Course {
   id: string;
@@ -100,26 +99,30 @@ export default function LecturerCoursesPage() {
           rating: 0,
           reviewsCount: 0,
           gradient: gradients[idx % gradients.length],
-          raw: c, // store raw local info
+          raw: c,
         };
       });
 
       if (res.success && res.data && res.data.length > 0) {
+        const gradients = [
+          "from-primary/80 to-primary-container",
+          "from-secondary/80 to-secondary-container",
+          "from-tertiary/80 to-tertiary-container",
+        ];
         const mapped: Course[] = res.data.map((c: any, idx: number) => {
-          const gradients = [
-            "from-primary/80 to-primary-container",
-            "from-secondary/80 to-secondary-container",
-            "from-tertiary/80 to-tertiary-container",
-          ];
           let formattedStatus: "Active" | "Draft" | "Archived" = "Active";
           if (c.status === "draft") formattedStatus = "Draft";
           if (c.status === "archived") formattedStatus = "Archived";
+          let studentsCount = 0;
+          if (c.classes && Array.isArray(c.classes)) {
+            studentsCount = c.classes.reduce((sum: number, cls: any) => sum + (cls.enrollmentCount || 0), 0);
+          }
 
           return {
             id: c.id,
             title: c.name,
-            category: c.code || "Khóa học",
-            studentsCount: 0,
+            category: c.code || c.level || "Khóa học",
+            studentsCount: studentsCount,
             chaptersCount: 6,
             duration: "12 giờ",
             status: formattedStatus,
