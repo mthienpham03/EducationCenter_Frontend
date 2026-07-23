@@ -24,19 +24,28 @@ export default function AdminQuizResultsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [quizRes, attemptsRes] = await Promise.all([
-        quizService.getQuizById(quizId),
-        quizService.getAttemptsByQuiz(quizId),
-      ]);
+      // Fetch quiz details
+      try {
+        const quizRes = await quizService.getQuizById(quizId);
+        if (quizRes.success && quizRes.data) {
+          setQuiz(quizRes.data);
+        }
+      } catch (quizErr) {
+        console.error("Lỗi khi tải thông tin đề thi:", quizErr);
+      }
 
-      if (quizRes.success) {
-        setQuiz(quizRes.data);
+      // Fetch attempts details
+      try {
+        const attemptsRes = await quizService.getAttemptsByQuiz(quizId);
+        if (attemptsRes?.success && attemptsRes.data) {
+          const raw = attemptsRes.data as any;
+          const list = Array.isArray(raw) ? raw : (raw.attempts || []);
+          setAttempts(list);
+        }
+      } catch (attemptsErr) {
+        console.warn("Chưa thể tải danh sách bài làm của học viên:", attemptsErr);
+        setAttempts([]);
       }
-      if (attemptsRes.success) {
-        setAttempts(attemptsRes.data || []);
-      }
-    } catch (err) {
-      console.error("Lỗi khi tải báo cáo bài thi:", err);
     } finally {
       setLoading(false);
     }

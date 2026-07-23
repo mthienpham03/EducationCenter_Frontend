@@ -351,8 +351,9 @@ export const quizService = {
     const response = await axiosClient.get<ApiTypes.ApiResponse<any[]>>("/quizzes/attempts/my", { params });
     return response.data;
   },
-  getAttemptDetails: async (attemptId: string): Promise<ApiTypes.ApiResponse<any>> => {
-    const response = await axiosClient.get<ApiTypes.ApiResponse<any>>(`/quizzes/attempts/${attemptId}`);
+  getAttemptDetails: async (attemptId: string, quizId?: string): Promise<ApiTypes.ApiResponse<any>> => {
+    const url = quizId ? `/quizzes/${quizId}/attempts/${attemptId}` : `/quizzes/attempts/${attemptId}`;
+    const response = await axiosClient.get<ApiTypes.ApiResponse<any>>(url);
     return response.data;
   },
   getAttemptsByQuiz: async (quizId: string): Promise<ApiTypes.ApiResponse<any[]>> => {
@@ -363,8 +364,8 @@ export const quizService = {
     const response = await axiosClient.post<ApiTypes.ApiResponse<any>>(`/quizzes/${quizId}/attempts`);
     return response.data;
   },
-  submitAttempt: async (attemptId: string, answers: { questionId: string; selectedOptionIds: string[] }[]): Promise<ApiTypes.ApiResponse<any>> => {
-    const response = await axiosClient.post<ApiTypes.ApiResponse<any>>(`/quizzes/attempts/${attemptId}/submit`, { answers });
+  submitAttempt: async (quizId: string, attemptId: string, answers: { questionId: string; answerData?: string[]; selectedOptionIds?: string[] }[]): Promise<ApiTypes.ApiResponse<any>> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse<any>>(`/quizzes/${quizId}/attempts/${attemptId}/submit`, { answers });
     return response.data;
   },
 };

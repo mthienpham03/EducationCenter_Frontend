@@ -26,7 +26,7 @@ export default function AdminStudentAttemptDetailsPage() {
       setLoading(true);
       const res = await quizService.getAttemptDetails(attemptId);
       if (res.success && res.data) {
-        setAttempt(res.data.attempt);
+        setAttempt(res.data.attempt || res.data);
         setAnswers(res.data.answers || []);
       }
     } catch (err: any) {
@@ -231,8 +231,8 @@ export default function AdminStudentAttemptDetailsPage() {
                       </div>
 
                       <div className="grid grid-cols-1 gap-3">
-                        {ans.options.map((opt: any) => {
-                          const isSelected = ans.selectedOptionIds.includes(opt.id);
+                        {ans.options?.map((opt: any) => {
+                          const isSelected = (ans.selectedOptionIds || ans.answerData || []).includes(opt.id);
                           const isOptCorrect = opt.isCorrect;
 
                           let containerClass = "bg-white border-slate-200 text-slate-700";
@@ -262,21 +262,21 @@ export default function AdminStudentAttemptDetailsPage() {
                                 {icon}
                               </span>
                               <span className="flex-1">{opt.content}</span>
-                              {isOptCorrect && (
-                                <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-md">
-                                  Đáp án đúng
-                                </span>
-                              )}
-                              {isSelected && !isOptCorrect && (
-                                <span className="text-xs font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-md">
-                                  Học viên chọn
-                                </span>
-                              )}
-                              {isSelected && isOptCorrect && (
-                                <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-md">
-                                  Học viên chọn chính xác
-                                </span>
-                              )}
+                                {isOptCorrect && isSelected && (
+                                  <span className="text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1 rounded-md">
+                                    ✓ Học viên chọn đúng
+                                  </span>
+                                )}
+                                {isOptCorrect && !isSelected && (
+                                  <span className="text-xs font-bold text-green-700 bg-green-50 px-2.5 py-1 rounded-md">
+                                    Đáp án đúng
+                                  </span>
+                                )}
+                                {!isOptCorrect && isSelected && (
+                                  <span className="text-xs font-bold text-red-700 bg-red-100 px-2.5 py-1 rounded-md">
+                                    Học viên chọn sai
+                                  </span>
+                                )}
                             </div>
                           );
                         })}

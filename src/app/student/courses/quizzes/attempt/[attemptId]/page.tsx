@@ -25,7 +25,7 @@ export default function StudentAttemptDetailsPage() {
       setLoading(true);
       const res = await quizService.getAttemptDetails(attemptId);
       if (res.success && res.data) {
-        setAttempt(res.data.attempt);
+        setAttempt(res.data.attempt || res.data);
         setAnswers(res.data.answers || []);
       }
     } catch (err: any) {
@@ -172,7 +172,12 @@ export default function StudentAttemptDetailsPage() {
                     <span className="material-symbols-outlined text-[48px] text-primary">analytics</span>
                     <div className="text-center md:text-left">
                       <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Điểm số đạt được</p>
-                      <p className="text-3xl font-black text-primary">{attempt.totalScore} <span className="text-base text-on-surface-variant font-normal">/ 10.0</span></p>
+                      <p className="text-3xl font-black text-primary">
+                        {attempt.totalScore}{" "}
+                        <span className="text-base text-on-surface-variant font-normal">
+                          / {answers.length > 0 ? answers.reduce((sum, a) => sum + (a.maxScore || 1), 0) : 10} điểm
+                        </span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -214,8 +219,8 @@ export default function StudentAttemptDetailsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
-                          {ans.options.map((opt: any) => {
-                            const isSelected = ans.selectedOptionIds.includes(opt.id);
+                          {ans.options?.map((opt: any) => {
+                            const isSelected = (ans.selectedOptionIds || ans.answerData || []).includes(opt.id);
                             const isOptCorrect = opt.isCorrect;
 
                             // Trạng thái hiển thị viền/màu sắc của option:
@@ -249,19 +254,19 @@ export default function StudentAttemptDetailsPage() {
                                   {icon}
                                 </span>
                                 <span className="flex-1">{opt.content}</span>
-                                {isOptCorrect && (
-                                  <span className="text-xs font-bold text-green-600 bg-green-500/10 px-2 py-0.5 rounded-md">
+                                {isOptCorrect && isSelected && (
+                                  <span className="text-xs font-bold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-md">
+                                    ✓ Chính xác (Bạn chọn đúng)
+                                  </span>
+                                )}
+                                {isOptCorrect && !isSelected && (
+                                  <span className="text-xs font-bold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-md">
                                     Đáp án đúng
                                   </span>
                                 )}
-                                {isSelected && !isOptCorrect && (
-                                  <span className="text-xs font-bold text-red-600 bg-red-500/10 px-2 py-0.5 rounded-md">
-                                    Lựa chọn của bạn
-                                  </span>
-                                )}
-                                {isSelected && isOptCorrect && (
-                                  <span className="text-xs font-bold text-green-600 bg-green-500/10 px-2 py-0.5 rounded-md">
-                                    Chính xác
+                                {!isOptCorrect && isSelected && (
+                                  <span className="text-xs font-bold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-md">
+                                    Lựa chọn của bạn (Sai)
                                   </span>
                                 )}
                               </div>

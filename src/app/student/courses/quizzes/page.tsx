@@ -26,12 +26,11 @@ export default function StudentQuizzesPage() {
         quizService.getStudentAttempts(),
       ]);
 
-      if (quizRes.success) {
-        setQuizzes(quizRes.data || []);
-      }
-      if (attemptRes.success) {
-        setAttempts(attemptRes.data || []);
-      }
+      const quizData = quizRes?.data ?? (Array.isArray(quizRes) ? quizRes : []);
+      const attemptData = attemptRes?.data ?? (Array.isArray(attemptRes) ? attemptRes : []);
+
+      setQuizzes(Array.isArray(quizData) ? quizData : []);
+      setAttempts(Array.isArray(attemptData) ? attemptData : []);
     } catch (err) {
       console.error("Lỗi khi tải danh sách bài thi:", err);
     } finally {

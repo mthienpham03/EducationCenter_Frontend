@@ -200,6 +200,13 @@ export default function AdminQuizzesPage() {
                       <td className="px-4 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                           <Link
+                            href={`/admin/quizzes/${q.id}`}
+                            className="p-1.5 hover:bg-primary-container rounded-lg text-on-surface-variant hover:text-primary transition-colors inline-flex"
+                            title="Xem báo cáo & Kết quả thi"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">analytics</span>
+                          </Link>
+                          <Link
                             href={`/admin/quizzes/${q.id}/questions`}
                             className="p-1.5 hover:bg-tertiary-container rounded-lg text-on-surface-variant hover:text-tertiary transition-colors inline-flex"
                             title="Quản lý câu hỏi"

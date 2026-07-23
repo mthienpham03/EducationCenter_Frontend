@@ -110,7 +110,7 @@ export default function StudentDashboard() {
             <span className="material-symbols-outlined">folder_open</span>
             <span>Tài liệu</span>
           </Link>
-          <Link href="/student/courses/quizzes" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md">
+          <Link href="/student/quizzes" className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-all duration-200 rounded-lg font-label-md">
             <span className="material-symbols-outlined">quiz</span>
             <span>Bài kiểm tra</span>
           </Link>

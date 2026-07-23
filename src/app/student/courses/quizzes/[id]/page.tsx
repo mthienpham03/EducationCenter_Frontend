@@ -54,15 +54,9 @@ export default function StudentQuizDetailPage() {
 
   const handleStartAttempt = async () => {
     if (!quiz) return;
-    
-    // Xác thực số lượt làm bài còn lại ở client trước
-    if (attempts.length >= quiz.maxAttempts) {
-      alert(`Bạn đã hết lượt làm bài. Số lượt tối đa cho phép là ${quiz.maxAttempts}.`);
-      return;
-    }
 
     const confirmStart = window.confirm(
-      `Bạn có chắc chắn muốn bắt đầu làm bài thi không?\nThời gian làm bài: ${quiz.durationMinutes} phút.\nLượt thi này sẽ tính là lượt thứ ${attempts.length + 1}.`
+      `Bạn có chắc chắn muốn bắt đầu làm bài thi không?\nThời gian làm bài: ${quiz.durationMinutes} phút.`
     );
 
     if (!confirmStart) return;
@@ -71,8 +65,13 @@ export default function StudentQuizDetailPage() {
       setSubmitting(true);
       const res = await quizService.startAttempt(quizId);
       if (res.success && res.data) {
-        // Chuyển hướng học viên tới trang làm bài thi kèm theo attemptId
-        router.push(`/student/courses/quizzes/${quizId}/take?attemptId=${res.data.id}`);
+        // Backend trả về data.attemptId
+        const attemptId = res.data.attemptId ?? res.data.id;
+        if (!attemptId) {
+          alert("Không lấy được mã lượt thi từ server. Vui lòng thử lại.");
+          return;
+        }
+        router.push(`/student/courses/quizzes/${quizId}/take?attemptId=${attemptId}`);
       } else {
         alert(res.message || "Không thể bắt đầu lượt thi");
       }

@@ -38,47 +38,43 @@ function TakeQuizContent() {
   }, []);
 
   const loadData = async () => {
-    if (!quizId || !attemptId) {
-      alert("Thiếu tham số lượt làm bài!");
-      router.push("/student/courses/quizzes");
+    if (!quizId || !attemptId || attemptId === "undefined") {
+      alert("Thiếu hoặc sai tham số lượt làm bài! Hệ thống sẽ đưa bạn về trang danh sách bài thi.");
+      router.push("/student/quizzes");
       return;
     }
 
     try {
       setLoading(true);
-      const [quizRes, questionsRes, attemptDetailsRes] = await Promise.all([
+      const [quizRes, questionsRes] = await Promise.all([
         quizService.getQuizById(quizId),
         quizService.getQuizQuestions(quizId),
-        quizService.getAttemptDetails(attemptId),
       ]);
 
-      if (quizRes.success) {
+      if (quizRes.success && quizRes.data) {
         setQuiz(quizRes.data);
-      }
-      if (questionsRes.success) {
-        setQuestions(questionsRes.data || []);
-      }
 
-      if (attemptDetailsRes.success && quizRes.success) {
-        const attempt = attemptDetailsRes.data.attempt;
-        if (attempt.submittedAt) {
-          alert("Lượt thi này đã nộp trước đó!");
-          router.push(`/student/courses/quizzes/attempt/${attemptId}`);
-          return;
+        // Tính thời gian còn lại = toàn bộ duration (vì không biết startedAt)
+        if (quizRes.data.durationMinutes) {
+          const remainingSecs = quizRes.data.durationMinutes * 60;
+          setTimeLeft(remainingSecs);
         }
+      }
 
-        // Calculate remaining duration
-        const startedTime = new Date(attempt.startedAt).getTime();
-        const durationMs = (quizRes.data.durationMinutes || 45) * 60 * 1000;
-        const endTime = startedTime + durationMs;
-        const remainingSecs = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
-        
-        setTimeLeft(remainingSecs);
+      if (questionsRes.success && questionsRes.data) {
+        // Backend trả về data = { questions: [...] } hoặc data là mảng trực tiếp
+        const rawData = questionsRes.data as any;
+        const questionList = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData.questions)
+          ? rawData.questions
+          : [];
+        setQuestions(questionList);
       }
     } catch (err) {
       console.error("Lỗi khi tải đề thi:", err);
       alert("Có lỗi xảy ra khi tải đề thi.");
-      router.push("/student/courses/quizzes");
+      router.push("/student/quizzes");
     } finally {
       setLoading(false);
     }
@@ -141,20 +137,24 @@ function TakeQuizContent() {
       setShowSubmitModal(false);
       if (timerRef.current) clearTimeout(timerRef.current);
 
-      const formattedAnswers = questions.map((q) => ({
-        questionId: q.questionId,
-        selectedOptionIds: answers[q.questionId] || [],
-      }));
+      const formattedAnswers = questions.map((q) => {
+        const selected = answers[q.questionId] || [];
+        return {
+          questionId: q.questionId,
+          answerData: selected,
+          selectedOptionIds: selected,
+        };
+      });
 
-      const res = await quizService.submitAttempt(attemptId!, formattedAnswers);
+      const res = await quizService.submitAttempt(quizId, attemptId!, formattedAnswers);
       if (res.success) {
         router.push(`/student/courses/quizzes/attempt/${attemptId}`);
       } else {
         alert(res.message || "Lỗi khi nộp bài thi");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Gặp lỗi trong quá trình nộp bài thi.");
+    } catch (err: any) {
+      console.error("Lỗi nộp bài thi:", err);
+      alert(err.response?.data?.message || err.message || "Gặp lỗi trong quá trình nộp bài thi.");
     } finally {
       setSubmitting(false);
     }
@@ -234,7 +234,15 @@ function TakeQuizContent() {
                         Câu {currentIdx + 1} / {questions.length}
                       </span>
                       <span className="text-xs font-semibold bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full">
-                        {currentQuestion.score} điểm • {currentQuestion.questionType === "multiple" ? "Nhiều lựa chọn" : "Một lựa chọn"}
+                        {currentQuestion.score} điểm • {
+                          currentQuestion.questionType === "TRUE_FALSE"
+                            ? "Đúng / Sai"
+                            : (currentQuestion.questionType === "multiple" ||
+                               currentQuestion.questionType === "MCQ_MULTIPLE" ||
+                               currentQuestion.questionType === "multiple_choice") 
+                              ? "Nhiều lựa chọn" 
+                              : "Một lựa chọn"
+                        }
                       </span>
                     </div>
 
@@ -267,7 +275,10 @@ function TakeQuizContent() {
                   <div className="grid grid-cols-1 gap-3 pt-2">
                     {currentQuestion.options?.map((opt: any, i: number) => {
                       const labelLetter = String.fromCharCode(65 + i);
-                      const isMultiple = currentQuestion.questionType === "multiple";
+                      const isMultiple =
+                        currentQuestion.questionType === "multiple" ||
+                        currentQuestion.questionType === "MCQ_MULTIPLE" ||
+                        currentQuestion.questionType === "multiple_choice";
                       const selectedOptions = answers[currentQuestion.questionId] || [];
                       const isSelected = selectedOptions.includes(opt.id);
 
@@ -370,7 +381,7 @@ function TakeQuizContent() {
 
                     return (
                       <button
-                        key={q.questionId}
+                        key={q.questionId || idx}
                         onClick={() => setCurrentIdx(idx)}
                         className={`relative h-10 rounded-xl border text-xs font-bold transition-all flex items-center justify-center ${btnStyle}`}
                       >
