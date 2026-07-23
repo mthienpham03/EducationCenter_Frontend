@@ -47,42 +47,25 @@ export default function LecturerDocumentUploadPage() {
   const [uploadChapters, setUploadChapters] = useState<any[]>([]);
   const [uploadLessons, setUploadLessons] = useState<any[]>([]);
 
-  const MOCK_COURSES_LIST = [
-    { id: "ielts-mastery", name: "IELTS Mastery (Standard Edition)" },
-    { id: "ielts-writing", name: "IELTS Writing Intensive" },
-    { id: "toeic-750", name: "TOEIC Target 750+" }
-  ];
+  const [isCreatingChapter, setIsCreatingChapter] = useState(false);
+  const [newChapterTitle, setNewChapterTitle] = useState("");
+  const [isCreatingLesson, setIsCreatingLesson] = useState(false);
+  const [newLessonTitle, setNewLessonTitle] = useState("");
 
-  // Load courses
+
   useEffect(() => {
     const loadCourses = async () => {
       try {
         const res = await courseService.getCourses();
-        const localCoursesStr = localStorage.getItem("local_lecturer_courses");
-        const localCourses = localCoursesStr ? JSON.parse(localCoursesStr) : [];
-        const mappedLocal = localCourses.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-        }));
-
-        if (res.success && res.data && res.data.length > 0) {
+        if (res.success && res.data) {
           const courseList = (res.data as unknown as { id: string; name: string }[]).map((c) => ({
             id: c.id,
             name: c.name,
           }));
-          setCourses([...mappedLocal, ...courseList]);
-        } else {
-          setCourses([...mappedLocal, ...MOCK_COURSES_LIST]);
+          setCourses(courseList);
         }
       } catch (err) {
         console.error("Lỗi khi tải danh sách khóa học:", err);
-        const localCoursesStr = localStorage.getItem("local_lecturer_courses");
-        const localCourses = localCoursesStr ? JSON.parse(localCoursesStr) : [];
-        const mappedLocal = localCourses.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-        }));
-        setCourses([...mappedLocal, ...MOCK_COURSES_LIST]);
       }
     };
     loadCourses();
@@ -95,28 +78,6 @@ export default function LecturerDocumentUploadPage() {
     setUploadChapters([]);
     setUploadLessons([]);
     if (!courseId) return;
-
-    if (["ielts-mastery", "ielts-writing", "toeic-750"].includes(courseId) || courseId.startsWith("local-course-")) {
-      setUploadChapters([
-        {
-          id: "chap-mock-1",
-          title: "Chương 1: Kiến thức nền tảng",
-          lessons: [
-            { id: "les-mock-1", title: "Bài 1.1: Giới thiệu khóa học & Phương pháp" },
-            { id: "les-mock-2", title: "Bài 1.2: Từ vựng và Cấu trúc câu quan trọng" }
-          ]
-        },
-        {
-          id: "chap-mock-2",
-          title: "Chương 2: Luyện tập chuyên sâu",
-          lessons: [
-            { id: "les-mock-3", title: "Bài 2.1: Kỹ năng phân tích đề bài" },
-            { id: "les-mock-4", title: "Bài 2.2: Thực hành làm bài mẫu" }
-          ]
-        }
-      ]);
-      return;
-    }
 
     try {
       const res = await courseService.getChaptersAndLessons(courseId);
@@ -136,6 +97,41 @@ export default function LecturerDocumentUploadPage() {
       setUploadLessons(selectedChapter.lessons);
     } else {
       setUploadLessons([]);
+    }
+  };
+
+  const handleCreateChapter = async () => {
+    if (!uploadCourseId || !newChapterTitle.trim()) return;
+    try {
+      const res = await courseService.createChapter(uploadCourseId, { title: newChapterTitle, orderIndex: uploadChapters.length + 1 });
+      if (res.success && res.data) {
+        setUploadChapters([...uploadChapters, res.data]);
+        setUploadChapterId(res.data.id);
+        setIsCreatingChapter(false);
+        setNewChapterTitle("");
+        setUploadLessons([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Tạo chương thất bại");
+    }
+  };
+
+  const handleCreateLesson = async () => {
+    if (!uploadCourseId || !uploadChapterId || !newLessonTitle.trim()) return;
+    try {
+      const res = await courseService.createLesson(uploadCourseId, uploadChapterId, { title: newLessonTitle, type: "video", orderIndex: uploadLessons.length + 1 });
+      if (res.success && res.data) {
+        const newLesson = res.data;
+        setUploadLessons([...uploadLessons, newLesson]);
+        setLessonId(newLesson.id);
+        setIsCreatingLesson(false);
+        setNewLessonTitle("");
+        setUploadChapters(uploadChapters.map(ch => ch.id === uploadChapterId ? { ...ch, lessons: [...(ch.lessons || []), newLesson] } : ch));
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Tạo bài học thất bại");
     }
   };
 
@@ -176,15 +172,13 @@ export default function LecturerDocumentUploadPage() {
 
         setProgress(Math.round(((i + 0.3) / files.length) * 100));
 
-        if (!lessonId.trim().startsWith("les-mock-")) {
-          await documentService.uploadDocument(file, {
-            lessonId: lessonId.trim(),
-            title: docTitle,
-            type: docType,
-            visibility,
-            status,
-          });
-        }
+        await documentService.uploadDocument(file, {
+          lessonId: lessonId.trim(),
+          title: docTitle,
+          type: docType,
+          visibility,
+          status,
+        });
 
         uploaded++;
         setProgress(Math.round(((i + 1) / files.length) * 100));
@@ -393,33 +387,85 @@ export default function LecturerDocumentUploadPage() {
 
             {uploadCourseId && (
               <div>
-                <label className="text-label-md font-semibold text-on-surface block mb-1.5">Chương học <span className="text-error">*</span></label>
-                <select
-                  value={uploadChapterId}
-                  onChange={(e) => handleChapterChange(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer transition-all"
-                >
-                  <option value="">Chọn chương học...</option>
-                  {uploadChapters.map((ch) => (
-                    <option key={ch.id} value={ch.id}>{ch.title}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-label-md font-semibold text-on-surface">Chương học <span className="text-error">*</span></label>
+                  {!isCreatingChapter ? (
+                    <button onClick={() => setIsCreatingChapter(true)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">add</span>Thêm mới
+                    </button>
+                  ) : (
+                    <button onClick={() => setIsCreatingChapter(false)} className="text-xs text-on-surface-variant hover:underline">
+                      Hủy
+                    </button>
+                  )}
+                </div>
+                {isCreatingChapter ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newChapterTitle}
+                      onChange={(e) => setNewChapterTitle(e.target.value)}
+                      placeholder="Tên chương học..."
+                      className="flex-1 px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button onClick={handleCreateChapter} disabled={!newChapterTitle.trim()} className="px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md hover:opacity-90 disabled:opacity-50">
+                      Tạo
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={uploadChapterId}
+                    onChange={(e) => handleChapterChange(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer transition-all"
+                  >
+                    <option value="">Chọn chương học...</option>
+                    {uploadChapters.map((ch) => (
+                      <option key={ch.id} value={ch.id}>{ch.title}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
 
             {uploadChapterId && (
               <div>
-                <label className="text-label-md font-semibold text-on-surface block mb-1.5">Bài học <span className="text-error">*</span></label>
-                <select
-                  value={lessonId}
-                  onChange={(e) => setLessonId(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer transition-all"
-                >
-                  <option value="">Chọn bài học...</option>
-                  {uploadLessons.map((l) => (
-                    <option key={l.id} value={l.id}>{l.title}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-label-md font-semibold text-on-surface">Bài học <span className="text-error">*</span></label>
+                  {!isCreatingLesson ? (
+                    <button onClick={() => setIsCreatingLesson(true)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">add</span>Thêm mới
+                    </button>
+                  ) : (
+                    <button onClick={() => setIsCreatingLesson(false)} className="text-xs text-on-surface-variant hover:underline">
+                      Hủy
+                    </button>
+                  )}
+                </div>
+                {isCreatingLesson ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newLessonTitle}
+                      onChange={(e) => setNewLessonTitle(e.target.value)}
+                      placeholder="Tên bài học..."
+                      className="flex-1 px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button onClick={handleCreateLesson} disabled={!newLessonTitle.trim()} className="px-4 py-2 bg-primary text-on-primary rounded-xl font-label-md hover:opacity-90 disabled:opacity-50">
+                      Tạo
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={lessonId}
+                    onChange={(e) => setLessonId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant/50 rounded-xl text-body-md focus:outline-none focus:border-primary cursor-pointer transition-all"
+                  >
+                    <option value="">Chọn bài học...</option>
+                    {uploadLessons.map((l) => (
+                      <option key={l.id} value={l.id}>{l.title}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
 

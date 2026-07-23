@@ -298,6 +298,35 @@ export const courseService = {
     return response.data;
   },
 
+  // Chapter CRUD
+  createChapter: async (courseId: string, data: any): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(`/courses/${courseId}/chapters`, data);
+    return response.data;
+  },
+  updateChapter: async (courseId: string, chapterId: string, data: any): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.patch<ApiTypes.ApiResponse>(`/courses/${courseId}/chapters/${chapterId}`, data);
+    return response.data;
+  },
+  deleteChapter: async (courseId: string, chapterId: string): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/${courseId}/chapters/${chapterId}`);
+    return response.data;
+  },
+
+  // Lesson CRUD
+  createLesson: async (courseId: string, chapterId: string, data: any): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(`/courses/${courseId}/chapters/${chapterId}/lessons`, data);
+    return response.data;
+  },
+  updateLesson: async (courseId: string, chapterId: string, lessonId: string, data: any): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.patch<ApiTypes.ApiResponse>(`/courses/${courseId}/chapters/${chapterId}/lessons/${lessonId}`, data);
+    return response.data;
+  },
+  deleteLesson: async (courseId: string, chapterId: string, lessonId: string): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.delete<ApiTypes.ApiResponse>(`/courses/${courseId}/chapters/${chapterId}/lessons/${lessonId}`);
+    return response.data;
+  },
+
+
   /** Chuyển lớp học viên (Admin) */
   transferStudent: async (classId: string, studentId: string, data: { targetClassId: string; reason?: string; note?: string }): Promise<ApiTypes.ApiResponse> => {
     const response = await axiosClient.post<ApiTypes.ApiResponse>(`/courses/classes/${classId}/students/${studentId}/transfer`, data);

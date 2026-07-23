@@ -53,20 +53,9 @@ function LearningSpaceContent() {
         // Fetch course info
         let courseData = { id: courseId, name: "Khóa học chất lượng cao EduCenter", code: "EDU-101" };
         try {
-          if (!courseId.endsWith("-mock")) {
-            const courseRes = await courseService.getCourseById(courseId);
-            if (courseRes.success && courseRes.data) {
-              courseData = courseRes.data;
-            }
-          } else {
-            // Set matching names for mock courses
-            if (courseId === "uiux-mock") {
-              courseData = { id: courseId, name: "UI/UX Advanced: Master the Design System", code: "UI/UX" };
-            } else if (courseId === "nextjs-mock") {
-              courseData = { id: courseId, name: "Fullstack Web Development with Next.js", code: "NEXTJS" };
-            } else if (courseId === "marketing-mock") {
-              courseData = { id: courseId, name: "Digital Marketing & Growth Hacking", code: "MARKETING" };
-            }
+          const courseRes = await courseService.getCourseById(courseId);
+          if (courseRes.success && courseRes.data) {
+            courseData = courseRes.data;
           }
         } catch (e) {
           console.error("Lỗi khi tải thông tin khóa học:", e);
@@ -76,43 +65,15 @@ function LearningSpaceContent() {
         // Fetch chapters & lessons
         let chaptersData: any[] = [];
         try {
-          if (!courseId.endsWith("-mock")) {
-            const curriculumRes = await courseService.getChaptersAndLessons(courseId);
-            if (curriculumRes.success && curriculumRes.data && curriculumRes.data.length > 0) {
-              chaptersData = curriculumRes.data.map((ch: any) => ({
-                ...ch,
-                expanded: true,
-              }));
-            }
+          const curriculumRes = await courseService.getChaptersAndLessons(courseId);
+          if (curriculumRes.success && curriculumRes.data && curriculumRes.data.length > 0) {
+            chaptersData = curriculumRes.data.map((ch: any) => ({
+              ...ch,
+              expanded: true,
+            }));
           }
         } catch (e) {
           console.error("Lỗi khi tải chương trình học từ API:", e);
-        }
-
-        // Nếu API rỗng hoặc lỗi, dùng dữ liệu mẫu
-        if (chaptersData.length === 0) {
-          chaptersData = [
-            {
-              id: "ch-1",
-              title: "Chương 1: Giới thiệu & Tổng quan khóa học",
-              expanded: true,
-              lessons: [
-                { id: "les-1-1", title: "1.1: Mục tiêu và phương pháp học hiệu quả", duration: "08:24", type: "video", orderIndex: 1 },
-                { id: "les-1-2", title: "1.2: Cài đặt và thiết lập môi trường", duration: "15:45", type: "video", orderIndex: 2 },
-                { id: "les-1-3", title: "1.3: Bài test trắc nghiệm chương 1", duration: "10 câu", type: "quiz", orderIndex: 3 },
-              ]
-            },
-            {
-              id: "ch-2",
-              title: "Chương 2: Kiến thức nền tảng và Tư duy thiết kế",
-              expanded: true,
-              lessons: [
-                { id: "les-2-1", title: "2.1: Quy trình Wireframing chuyên sâu", duration: "22:10", type: "video", orderIndex: 1 },
-                { id: "les-2-2", title: "2.2: Phân tích trải nghiệm UX người dùng", duration: "18:30", type: "video", orderIndex: 2 },
-                { id: "les-2-3", title: "2.3: Đọc thêm: Design Thinking Framework", duration: "12 trang", type: "reading", orderIndex: 3 },
-              ]
-            }
-          ];
         }
 
         setChapters(chaptersData);
@@ -137,13 +98,6 @@ function LearningSpaceContent() {
     if (!activeLesson?.id) return;
     const fetchDocs = async () => {
       try {
-        if (activeLesson.id.startsWith("les-")) {
-          setRelatedDocs([
-            { id: "doc-1", title: "Tài liệu học tập chi tiết.pdf", type: "pdf", fileUrl: "#", downloadCount: 42, size: 1048576, createdAt: "2026-06-29" },
-            { id: "doc-2", title: "Slide bài giảng lý thuyết.pptx", type: "slide", fileUrl: "#", downloadCount: 15, size: 2097152, createdAt: "2026-06-29" }
-          ] as any);
-          return;
-        }
         const res = await documentService.getDocuments({ lessonId: activeLesson.id });
         if (res.success && res.data) {
           setRelatedDocs(res.data);
@@ -297,45 +251,29 @@ function LearningSpaceContent() {
                   {/* Video/Reading Player */}
                   <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
                     {activeLesson ? (
-                      <div className="relative aspect-video bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center cursor-pointer group" onClick={() => setIsPlaying(!isPlaying)}>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                        
-                        <div className={`w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-all group-hover:scale-110 group-hover:bg-white/30 ${isPlaying ? "opacity-0 group-hover:opacity-100" : ""}`}>
-                          <span className="material-symbols-outlined text-white text-[40px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                            {isPlaying ? "pause" : "play_arrow"}
-                          </span>
+                      relatedDocs.find(d => d.type === 'video') ? (
+                        <video 
+                          src={relatedDocs.find(d => d.type === 'video').fileUrl} 
+                          controls 
+                          className="w-full aspect-video object-contain bg-black"
+                          onPlay={() => setIsPlaying(true)}
+                          onPause={() => setIsPlaying(false)}
+                        />
+                      ) : relatedDocs.find(d => ['pdf', 'doc', 'slide', 'image'].includes(d.type)) ? (
+                        <div className="w-full aspect-video bg-surface-container-low flex flex-col items-center justify-center border-b border-outline-variant/20">
+                          <span className="material-symbols-outlined text-[64px] text-tertiary mb-4">menu_book</span>
+                          <h3 className="font-headline-md text-on-surface mb-2 text-center px-4">{relatedDocs.find(d => ['pdf', 'doc', 'slide', 'image'].includes(d.type)).title}</h3>
+                          <a href={relatedDocs.find(d => ['pdf', 'doc', 'slide', 'image'].includes(d.type)).fileUrl} target="_blank" rel="noopener noreferrer" className="px-6 py-2.5 bg-tertiary text-on-tertiary rounded-xl font-label-md hover:opacity-90 transition-all flex items-center gap-2 mt-2">
+                            <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                            Mở tài liệu học tập
+                          </a>
                         </div>
-
-                        <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-                          <div>
-                            <p className="text-white text-sm font-semibold">{activeLesson.title}</p>
-                            <p className="text-white/70 text-xs">{activeLesson.duration || "Nội dung học tập"}</p>
-                          </div>
-                          {isPlaying && (
-                            <div className="flex items-center gap-2">
-                              <div className="flex gap-1">
-                                {[...Array(4)].map((_, i) => (
-                                  <div key={i} className="w-1 bg-white/80 rounded-full animate-pulse" style={{ height: `${12 + Math.random() * 16}px`, animationDelay: `${i * 0.15}s` }} />
-                                ))}
-                              </div>
-                              <span className="text-white/70 text-xs">Đang phát</span>
-                            </div>
-                          )}
+                      ) : (
+                        <div className="relative aspect-video bg-gradient-to-br from-gray-900 to-gray-800 flex flex-col items-center justify-center group">
+                           <span className="material-symbols-outlined text-[48px] text-white/50 mb-4">play_disabled</span>
+                           <p className="text-white/70 font-body-md">Bài học này chưa được cập nhật nội dung Video/Tài liệu</p>
                         </div>
-
-                        <div className="absolute top-4 right-4 flex gap-2">
-                          <button className="p-2 bg-white/10 backdrop-blur-sm rounded-lg text-white hover:bg-white/20 transition-all">
-                            <span className="material-symbols-outlined text-[20px]">settings</span>
-                          </button>
-                          <button className="p-2 bg-white/10 backdrop-blur-sm rounded-lg text-white hover:bg-white/20 transition-all">
-                            <span className="material-symbols-outlined text-[20px]">fullscreen</span>
-                          </button>
-                        </div>
-
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                          <div className="h-full w-1/3 bg-primary rounded-r-full" />
-                        </div>
-                      </div>
+                      )
                     ) : (
                       <div className="aspect-video bg-surface-container-low flex flex-col items-center justify-center text-on-surface-variant p-6">
                         <span className="material-symbols-outlined text-[48px] mb-2">class</span>

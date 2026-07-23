@@ -203,7 +203,7 @@ export default function AdminQuizResultsPage() {
                   <p className="mt-3 text-3xl font-black text-green-600">{highestScore} / 10.0</p>
                 </div>
                 <div className="bg-white border border-[#bbe7ff] p-5 rounded-3xl shadow-sm">
-                  <p className="text-sm font-medium text-slate-500">Tỷ lệ đạt (>= 5.0)</p>
+                  <p className="text-sm font-medium text-slate-500">Tỷ lệ đạt (&ge; 5.0)</p>
                   <p className="mt-3 text-3xl font-black text-amber-500">{passRate}%</p>
                 </div>
               </div>

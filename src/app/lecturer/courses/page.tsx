@@ -1,5 +1,7 @@
 "use client";
 
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { courseService } from "@/lib/api/service";
 import CourseFormModal from "@/components/courses/CourseFormModal";
 import { api } from "@/lib/api";
@@ -227,34 +229,15 @@ export default function LecturerCoursesPage() {
     <div className="p-stack-md max-w-container-max mx-auto space-y-stack-md">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-stack-md mb-2">
-        <div>
+      <div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Quản lý khóa học</h1>
           <p className="font-body-md text-on-surface-variant mt-1">
-            Tổng quan và quản lý nội dung các chương trình đào tạo của bạn
+            Danh sách các khóa học được phân công giảng dạy. Liên hệ Admin để được thêm khóa học mới.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingCourse(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-primary text-on-primary font-label-md px-stack-md py-stack-sm rounded-lg flex items-center gap-base shadow-sm hover:opacity-90 transition-all transform hover:-translate-y-0.5"
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          Tạo Khóa Học Mới
-        </button>
       </div>
 
-      {/* Modal tạo / chỉnh sửa khóa học */}
-      <CourseFormModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingCourse(null);
-        }}
-        onSuccess={fetchCourses}
-        editingCourse={editingCourse}
-      />
+
 
       {/* Stats Bento Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">

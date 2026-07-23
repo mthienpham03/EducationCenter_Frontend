@@ -102,11 +102,7 @@ export default function StudentProgressPage() {
       try {
         setLoading(true);
         const res = await courseService.getCourses();
-        const coursesList = res.success && res.data && res.data.length > 0 ? res.data : [
-          { id: "uiux-mock", name: "UI/UX Advanced: Master the Design System", code: "UI/UX" },
-          { id: "nextjs-mock", name: "Fullstack Web Development with Next.js", code: "NEXTJS" },
-          { id: "marketing-mock", name: "Digital Marketing & Growth Hacking", code: "MARKETING" }
-        ];
+        const coursesList = res.success && res.data && res.data.length > 0 ? res.data : [];
         const coursesWithProgress = await Promise.all(
           coursesList.map(async (course: any, index: number) => {
               let totalLessonsCount = 12; // default fallback
@@ -116,14 +112,10 @@ export default function StudentProgressPage() {
                 const completed = JSON.parse(localStorage.getItem(completedKey) || "[]");
                 completedLessonsCount = completed.length;
 
-                if (!course.id.endsWith("-mock")) {
-                  const curriculumRes = await courseService.getChaptersAndLessons(course.id);
-                  if (curriculumRes.success && curriculumRes.data) {
-                    const allLessons = curriculumRes.data.flatMap((ch: any) => ch.lessons || []);
-                    totalLessonsCount = allLessons.length || 12;
-                  }
-                } else {
-                  totalLessonsCount = 6;
+                const curriculumRes = await courseService.getChaptersAndLessons(course.id);
+                if (curriculumRes.success && curriculumRes.data) {
+                  const allLessons = curriculumRes.data.flatMap((ch: any) => ch.lessons || []);
+                  totalLessonsCount = allLessons.length || 12;
                 }
               } catch (e) {
                 console.error("Lỗi khi tải chương học của khóa:", course.id, e);

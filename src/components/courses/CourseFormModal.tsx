@@ -11,7 +11,12 @@ interface CourseFormModalProps {
   editingCourse?: Course | null;
 }
 
-const LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced", "Expert"];
+const LEVEL_OPTIONS: { value: string; label: string }[] = [
+  { value: "Beginner", label: "Cơ bản" },
+  { value: "Intermediate", label: "Trung cấp" },
+  { value: "Advanced", label: "Nâng cao" },
+  { value: "Expert", label: "Chuyên gia" },
+];
 const STATUS_OPTIONS: { value: CourseStatus; label: string }[] = [
   { value: "draft", label: "Nháp" },
   { value: "published", label: "Đã xuất bản" },
@@ -234,7 +239,6 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
             />
           </div>
 
-          {/* Status */}
           <div>
             <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">
               Trạng thái <span className="text-error">*</span>
@@ -278,20 +282,6 @@ export default function CourseFormModal({ isOpen, onClose, onSuccess, editingCou
                 className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
               />
             </div>
-          </div>
-
-          {/* Thumbnail URL */}
-          <div>
-            <label className="block text-label-md font-label-md text-on-surface-variant mb-1.5">URL Ảnh bìa</label>
-            <input
-              id="course-thumbnail"
-              name="thumbnailUrl"
-              type="url"
-              value={form.thumbnailUrl}
-              onChange={handleChange}
-              placeholder="https://..."
-              className="w-full px-4 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-            />
           </div>
 
           {/* Actions */}
