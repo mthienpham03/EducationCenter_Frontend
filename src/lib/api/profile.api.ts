@@ -21,6 +21,10 @@ export interface StudentProfileData {
   studentCode?: string | null;
   dateOfBirth?: string | null;
   address?: string | null;
+  school?: string | null;
+  major?: string | null;
+  learningGoal?: string | null;
+  bio?: string | null;
   note?: string | null;
 }
 
@@ -46,37 +50,12 @@ export interface UserProfile {
 
 export const profileApi = {
   getProfile: async () => {
-    try {
-      const response = await axiosClient.get<{
-        success: boolean;
-        data: UserProfile;
-      }>("/profile");
+    const response = await axiosClient.get<{
+      success: boolean;
+      data: UserProfile;
+    }>("/profile");
 
-      return response.data.data;
-    } catch (err) {
-      // Mock data for development
-      const mock: UserProfile = {
-        id: "mock-user-1",
-        email: "student@educenter.com",
-        fullName: "Nguyễn Văn A",
-        phone: "0123456789",
-        avatarUrl: null,
-        role: "student",
-        status: "active",
-
-        studentProfile: {
-          studentCode: "STU2023001",
-          dateOfBirth: "2000-05-12",
-          address: "Hà Nội",
-          note: null,
-        },
-
-        lecturerProfile: null,
-        adminProfile: null,
-      };
-
-      return mock;
-    }
+    return response.data.data;
   },
 
   updateProfile: async (data: {
@@ -92,6 +71,9 @@ export const profileApi = {
     studentCode?: string;
     dateOfBirth?: string;
     address?: string;
+    school?: string;
+    major?: string;
+    learningGoal?: string;
 
     employeeCode?: string;
     department?: string;

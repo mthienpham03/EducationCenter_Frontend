@@ -144,7 +144,7 @@ export default function StudentLayout({
 
       {isDropdownOpen && (
         <div
-          className="fixed inset-0 z-50 bg-transparent"
+          className="fixed inset-0 z-40 bg-transparent"
           onClick={() => setIsDropdownOpen(false)}
         />
       )}

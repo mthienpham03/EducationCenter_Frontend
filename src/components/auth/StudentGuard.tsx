@@ -17,8 +17,23 @@ export default function StudentGuard({ children }: { children: React.ReactNode }
       router.replace("/login");
     } else {
       setIsAuthorized(true);
+      
+      // Sync profile in background to ensure auth store is up to date
+      import("@/lib/api").then(({ api }) => {
+        api.profile.getProfile().then((res) => {
+          if (res.data) {
+            useAuthStore.getState().updateUser({
+              fullName: res.data.fullName,
+              phone: res.data.phone,
+              avatarUrl: res.data.avatarUrl,
+            });
+          }
+        }).catch((err) => {
+          console.error("Failed to sync profile:", err);
+        });
+      });
     }
-  }, [hydrated, user, router]);
+  }, [hydrated, user?.id, router]);
 
   if (!hydrated || !isAuthorized) {
     return (

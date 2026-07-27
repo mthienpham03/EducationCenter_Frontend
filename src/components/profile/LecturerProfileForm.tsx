@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -38,18 +38,47 @@ const InputField = ({
 );
 
 export default function LecturerProfileForm() {
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    fullName: "Nguyễn Văn A",
-    email: "lecturer@educenter.com",
-    phone: "0901234567",
-    specialization: "Lập trình Web",
-    degree: "Thạc sĩ CNTT",
-    experienceYears: "5",
-    skills: "ReactJS, NextJS, NodeJS",
+    fullName: "",
+    email: "",
+    phone: "",
+    specialization: "",
+    degree: "",
+    experienceYears: "",
+    skills: "",
     bio: "",
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await api.profile.getProfile();
+        const profile = response.data;
+        if (profile) {
+          setForm({
+            fullName: profile.fullName || "",
+            email: profile.email || "",
+            phone: profile.phone || "",
+            specialization: profile.lecturerProfile?.specializations?.map(s => s.name).join(", ") || "",
+            degree: profile.lecturerProfile?.degree || "",
+            experienceYears: profile.lecturerProfile?.experienceYears?.toString() || "",
+            skills: profile.lecturerProfile?.skills || "",
+            bio: profile.lecturerProfile?.bio || "",
+          });
+          setAvatarUrl(profile.avatarUrl || null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,19 +95,14 @@ export default function LecturerProfileForm() {
     const file = e.target.files[0];
 
     try {
-      const res = await api.profile.uploadAvatarImage(file);
-
-      if (res.success && res.data?.url) {
-        setAvatarUrl(res.data.url);
-
-        await api.profile.updateProfile({
-          avatarUrl: res.data.url,
-        });
-
-        useAuthStore.getState().updateUser({
-          avatarUrl: res.data.url,
-        });
-      }
+        const res = await api.profile.uploadAvatarImage(file);
+        const url = res.data?.url;
+        if (url) {
+          setAvatarUrl(url);
+          await api.profile.updateProfile({ avatarUrl: url });
+          useAuthStore.getState().updateUser({ avatarUrl: url });
+          toast.success("Cập nhật ảnh đại diện thành công!");
+        }
     } catch (error) {
       console.error("Error uploading avatar:", error);
       alert("Không thể upload ảnh đại diện");
@@ -118,6 +142,14 @@ export default function LecturerProfileForm() {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">

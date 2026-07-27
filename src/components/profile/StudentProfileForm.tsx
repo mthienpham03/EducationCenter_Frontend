@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/auth.store";
+import { toast } from "react-toastify";
 
 export default function StudentProfileForm() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
   const [form, setForm] = useState({
-    fullName: "Ngô Quốc Hùng",
-    email: "student@educenter.com",
-    phone: "0901234567",
-    studentCode: "SV001",
-    school: "FPT Polytechnic",
-    major: "Công nghệ thông tin",
+    fullName: "",
+    email: "",
+    phone: "",
+    studentCode: "",
+    school: "",
+    major: "",
     learningGoal: "",
     bio: "",
   });
@@ -17,13 +23,82 @@ export default function StudentProfileForm() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await api.profile.getProfile();
+        const profile = response.data;
+        if (profile) {
+          setForm({
+            fullName: profile.fullName || "",
+            email: profile.email || "",
+            phone: profile.phone || "",
+            studentCode: profile.studentProfile?.studentCode || "",
+            school: profile.studentProfile?.school || "",
+            major: profile.studentProfile?.major || "",
+            learningGoal: profile.studentProfile?.learningGoal || "",
+            bio: profile.studentProfile?.bio || "",
+          });
+          setAvatarUrl(profile.avatarUrl || null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setAvatarUrl(URL.createObjectURL(e.target.files[0]));
+      const file = e.target.files[0];
+      try {
+        const res = await api.profile.uploadAvatarImage(file);
+        const url = res.data?.url;
+        if (url) {
+          setAvatarUrl(url);
+          await api.profile.updateProfile({ avatarUrl: url });
+          useAuthStore.getState().updateUser({ avatarUrl: url });
+          toast.success("Cập nhật ảnh đại diện thành công!");
+        }
+      } catch (error) {
+        console.error("Failed to upload avatar:", error);
+        toast.error("Không thể tải lên ảnh đại diện.");
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await api.profile.updateProfile({
+        fullName: form.fullName,
+        phone: form.phone,
+        avatarUrl: avatarUrl || undefined,
+        school: form.school,
+        major: form.major,
+        learningGoal: form.learningGoal,
+        bio: form.bio,
+      } as any);
+
+      useAuthStore.getState().updateUser({
+        fullName: form.fullName,
+        phone: form.phone,
+        avatarUrl: avatarUrl || undefined,
+      });
+
+      toast.success("Cập nhật thông tin thành công!");
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast.error("Cập nhật thông tin thất bại.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -44,6 +119,14 @@ export default function StudentProfileForm() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
       <div className="grid lg:grid-cols-3 gap-8">
@@ -63,7 +146,6 @@ export default function StudentProfileForm() {
             <h2 className="text-xl font-bold text-black">{form.fullName}</h2>
             <p className="text-sm text-black">{form.email}</p>
           </div>
-          {/* ... giữ nguyên phần grid thống kê ... */}
         </div>
 
         {/* Right Form */}
@@ -76,8 +158,8 @@ export default function StudentProfileForm() {
 
             <InputField label="Email" name="email" value={form.email} readOnly />
             <InputField label="Mã sinh viên" name="studentCode" value={form.studentCode} readOnly />
-            <InputField label="Trường học" name="school" value={form.school} readOnly />
-            <InputField label="Chuyên ngành" name="major" value={form.major} readOnly />
+            <InputField label="Trường học" name="school" value={form.school} />
+            <InputField label="Chuyên ngành" name="major" value={form.major} />
           </div>
 
           <div className="mt-6 flex flex-col gap-1.5">
@@ -103,8 +185,12 @@ export default function StudentProfileForm() {
           </div>
 
           <div className="flex justify-end mt-8">
-            <button className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-black/20">
-              Lưu thông tin
+            <button 
+              onClick={handleSave} 
+              disabled={saving}
+              className="bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-black/20"
+            >
+              {saving ? "Đang lưu..." : "Lưu thông tin"}
             </button>
           </div>
         </div>

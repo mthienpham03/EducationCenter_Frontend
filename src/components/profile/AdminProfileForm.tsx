@@ -1,28 +1,100 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/auth.store";
+import { toast } from "react-toastify";
 
 export default function AdminProfileForm() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
   const [form, setForm] = useState({
-    fullName: "Ngô Quốc Hùng",
-    email: "admin@educenter.com",
-    phone: "0901234567",
-    employeeCode: "ADM001",
-    department: "Quản trị hệ thống",
-    role: "Administrator",
+    fullName: "",
+    email: "",
+    phone: "",
+    employeeCode: "",
+    department: "",
+    role: "",
     bio: "",
   });
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await api.profile.getProfile();
+        const profile = response.data;
+        if (profile) {
+          setForm({
+            fullName: profile.fullName || "",
+            email: profile.email || "",
+            phone: profile.phone || "",
+            employeeCode: profile.adminProfile?.employeeCode || "",
+            department: profile.adminProfile?.department || "",
+            role: profile.role || "admin",
+            bio: profile.adminProfile?.note || "",
+          });
+          setAvatarUrl(profile.avatarUrl || null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setAvatarUrl(URL.createObjectURL(e.target.files[0]));
+      const file = e.target.files[0];
+      try {
+        const res = await api.profile.uploadAvatarImage(file);
+        const url = res.data?.url;
+        if (url) {
+          setAvatarUrl(url);
+          await api.profile.updateProfile({ avatarUrl: url });
+          useAuthStore.getState().updateUser({ avatarUrl: url });
+          toast.success("Cập nhật ảnh đại diện thành công!");
+        }
+      } catch (error) {
+        console.error("Failed to upload avatar:", error);
+        toast.error("Không thể tải lên ảnh đại diện.");
+      }
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await api.profile.updateProfile({
+        fullName: form.fullName,
+        phone: form.phone,
+        avatarUrl: avatarUrl || undefined,
+        employeeCode: form.employeeCode,
+        department: form.department,
+      } as any);
+
+      useAuthStore.getState().updateUser({
+        fullName: form.fullName,
+        phone: form.phone,
+        avatarUrl: avatarUrl || undefined,
+      });
+
+      toast.success("Cập nhật thông tin thành công!");
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast.error("Cập nhật thông tin thất bại.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -43,6 +115,14 @@ export default function AdminProfileForm() {
       />
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -66,7 +146,6 @@ export default function AdminProfileForm() {
               {form.role}
             </span>
           </div>
-          {/* ... giữ nguyên phần grid thống kê ... */}
         </div>
 
         {/* RIGHT FORM */}
@@ -97,8 +176,12 @@ export default function AdminProfileForm() {
           </div>
 
           <div className="flex justify-end mt-8">
-            <button className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-black/20">
-              Lưu thông tin
+            <button 
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-black/20"
+            >
+              {saving ? "Đang lưu..." : "Lưu thông tin"}
             </button>
           </div>
         </div>
