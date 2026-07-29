@@ -56,6 +56,7 @@ export interface UserProfile {
   lastLoginAt?: string | null;
   lockedUntil?: string | null;
   lockReason?: string | null;
+  adminProfile?: any | null;
   lecturerProfile?: LecturerProfile | null;
   studentProfile?: StudentProfile | null;
 }
@@ -84,7 +85,9 @@ export interface GetUsersResponse {
 export interface LecturerProfile {
   userId: string;
   specializations?: Specialization[] | null;
+  degree?: string | null;
   experienceYears?: number | null;
+  skills?: string | null;
   bio?: string | null;
   certificates?: Certificate[] | null;
   createdAt: string;
@@ -117,6 +120,10 @@ export interface UpdateLecturerProfileRequest {
 export interface StudentProfile {
   userId: string;
   studentCode: string;
+  school?: string | null;
+  major?: string | null;
+  learningGoal?: string | null;
+  bio?: string | null;
   specialization?: Specialization | null;
   enrolledCourses?: string[] | null;
   createdAt: string;

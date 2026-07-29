@@ -136,3 +136,56 @@ opacity: 0;
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* FullCalendar Custom Theme Rules */
+.fullcalendar-custom-wrapper .fc {
+  font-family: var(--font-sans);
+  --fc-border-color: rgba(195, 197, 215, 0.25);
+  --fc-today-bg-color: rgba(0, 63, 177, 0.04);
+  --fc-neutral-bg-color: #f8f9fa;
+  --fc-page-bg-color: transparent;
+  --fc-event-border-color: transparent;
+}
+
+.fullcalendar-custom-wrapper .fc .fc-col-header-cell {
+  background-color: var(--color-surface-container-low, #f3f4f5);
+  padding: 10px 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-on-surface-variant, #434654);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--fc-border-color);
+}
+
+.fullcalendar-custom-wrapper .fc .fc-timegrid-slot {
+  height: 48px !important;
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant, #737686);
+}
+
+.fullcalendar-custom-wrapper .fc .fc-timegrid-slot-label {
+  font-family: var(--font-mono, monospace);
+  font-weight: 500;
+}
+
+.fullcalendar-custom-wrapper .fc-event {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+}
+
+.fullcalendar-custom-wrapper .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+}
+
+.fullcalendar-custom-wrapper .fc .fc-timegrid-now-indicator-line {
+  border-color: #ba1a1a;
+  border-width: 2px;
+}
+
+.fullcalendar-custom-wrapper .fc .fc-timegrid-now-indicator-arrow {
+  border-color: #ba1a1a;
+}
