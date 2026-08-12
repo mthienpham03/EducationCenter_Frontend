@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import StudentGuard from "@/components/auth/StudentGuard";
+import NotificationBell from "@/components/features/notifications/notification-bell";
 
 export default function StudentLayout({
   children,
@@ -78,9 +79,7 @@ export default function StudentLayout({
 
             <div className="flex items-center gap-6">
               {/* Notifications / Actions */}
-              <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
-              </button>
+              <NotificationBell />
 
               {/* Avatar Dropdown */}
               <div className="flex items-center gap-3 pl-4 border-l border-outline-variant relative">

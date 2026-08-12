@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import AdminGuard from "@/components/auth/AdminGuard";
+import NotificationBell from "@/components/features/notifications/notification-bell";
 
 export default function AdminLayout({
   children,
@@ -83,6 +84,9 @@ export default function AdminLayout({
             </div>
             
             <div className="flex items-center gap-6">
+              {/* Notifications Bell */}
+              <NotificationBell />
+
               {/* Avatar Dropdown */}
               <div className="flex items-center gap-3 pl-4 border-l border-outline-variant relative">
                 <div className="text-right hidden sm:block">

@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import NotificationBell from "@/components/features/notifications/notification-bell";
 
 export default function TopNavBar() {
   const { user, logout } = useAuthStore();
@@ -44,7 +45,7 @@ export default function TopNavBar() {
       </div>
       <div className="flex items-center gap-stack-md">
         <div className="flex items-center gap-stack-sm ml-stack-sm border-l pl-stack-md border-outline-variant">
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 rounded-full hover:bg-surface-container-low">notifications</span>
+          <NotificationBell />
           <span className="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 rounded-full hover:bg-surface-container-low">help</span>
           <div className="flex items-center gap-2 relative" ref={menuRef}>
             <div

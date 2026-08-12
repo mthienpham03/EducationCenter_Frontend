@@ -462,6 +462,44 @@ export const notificationService = {
   },
 
   /**
+   * Mark all notifications as read
+   */
+  markAllAsRead: async (): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.patch<ApiTypes.ApiResponse>(
+      "/notifications/read-all"
+    );
+    return response.data;
+  },
+
+  /**
+   * Get unread count
+   */
+  getUnreadCount: async (): Promise<ApiTypes.ApiResponse<{ unreadCount: number }>> => {
+    const response = await axiosClient.get<ApiTypes.ApiResponse<{ unreadCount: number }>>(
+      "/notifications/unread-count"
+    );
+    return response.data;
+  },
+
+  /**
+   * Trigger automatic notification (Schedule cancellation, new material, new quiz)
+   */
+  triggerNotification: async (payload: {
+    type: "schedule_cancellation" | "new_material" | "new_quiz" | "system";
+    title: string;
+    content: string;
+    courseId?: string;
+    userIds?: string[];
+    reason?: string;
+  }): Promise<ApiTypes.ApiResponse> => {
+    const response = await axiosClient.post<ApiTypes.ApiResponse>(
+      "/notifications/trigger",
+      payload
+    );
+    return response.data;
+  },
+
+  /**
    * Delete notification
    */
   deleteNotification: async (id: string): Promise<ApiTypes.ApiResponse> => {

@@ -273,30 +273,41 @@ export default function ScheduleCalendar({
   const renderEventContent = (eventInfo: EventContentArg) => {
     const ext = eventInfo.event.extendedProps as ScheduleEvent;
     const timeStr = eventInfo.timeText;
+    const isMonthView = eventInfo.view.type === "dayGridMonth";
+
+    if (isMonthView) {
+      return (
+        <div className="px-2 py-1 w-full flex items-center gap-1.5 text-xs font-medium text-white truncate cursor-pointer rounded-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0 inline-block"></span>
+          <span className="font-mono text-[11px] opacity-90 shrink-0">{timeStr}</span>
+          <span className="truncate font-semibold">{eventInfo.event.title}</span>
+        </div>
+      );
+    }
 
     return (
-      <div className="p-1.5 h-full flex flex-col justify-between overflow-hidden text-xs cursor-pointer select-none group">
+      <div className="p-2 h-full flex flex-col justify-between overflow-hidden text-xs cursor-pointer select-none group">
         <div>
-          <div className="font-semibold text-white truncate flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/80 shrink-0 inline-block"></span>
-            <span className="truncate">{eventInfo.event.title}</span>
+          <div className="font-semibold text-white truncate flex items-center gap-1.5 leading-snug">
+            <span className="w-2 h-2 rounded-full bg-white/90 shrink-0 inline-block"></span>
+            <span className="truncate font-medium">{eventInfo.event.title}</span>
           </div>
-          <div className="text-white/90 text-[11px] font-mono mt-0.5 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[12px]">schedule</span>
+          <div className="text-white/90 text-[11px] font-mono mt-1 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[13px]">schedule</span>
             <span>{timeStr}</span>
           </div>
         </div>
 
-        <div className="mt-1 pt-1 border-t border-white/20 text-white/80 text-[10px] flex items-center justify-between gap-1">
+        <div className="mt-1 pt-1 border-t border-white/20 text-white/90 text-[11px] flex items-center justify-between gap-1">
           {ext.room && (
             <span className="truncate flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-[10px]">meeting_room</span>
+              <span className="material-symbols-outlined text-[11px]">meeting_room</span>
               {ext.room}
             </span>
           )}
           {ext.lecturerName && role === "admin" && (
             <span className="truncate flex items-center gap-0.5 font-medium">
-              <span className="material-symbols-outlined text-[10px]">person</span>
+              <span className="material-symbols-outlined text-[11px]">person</span>
               {ext.lecturerName}
             </span>
           )}
